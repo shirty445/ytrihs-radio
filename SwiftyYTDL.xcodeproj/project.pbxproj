@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5BFC52D62F915F8900930D7E /* SearchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFC52D52F915F8900930D7E /* SearchCoordinator.swift */; };
+		5BFC52D82F916E8000930D7E /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFC52D72F916E8000930D7E /* ThemeManager.swift */; };
 		7768684B2891080B0053CF2E /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = 7768684A2891080B0053CF2E /* ZipArchive */; };
 		7768685328910C290053CF2E /* python.zip in Resources */ = {isa = PBXBuildFile; fileRef = 7768685228910C290053CF2E /* python.zip */; };
 		7779A14B28911735000AD646 /* yt-dlp.zip in Resources */ = {isa = PBXBuildFile; fileRef = 7779A14A28911735000AD646 /* yt-dlp.zip */; };
@@ -110,6 +112,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5BFC52D52F915F8900930D7E /* SearchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchCoordinator.swift; sourceTree = "<group>"; };
+		5BFC52D72F916E8000930D7E /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		770D21F8288E3EC000B3142A /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		7719953A2891AC40002D2CE7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7768685228910C290053CF2E /* python.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; name = python.zip; path = "Thirdparties/Python-iOS-support/Python/Resources/python.zip"; sourceTree = SOURCE_ROOT; };
@@ -314,6 +318,8 @@
 			isa = PBXGroup;
 			children = (
 				B10100000000000000000001 /* AppEnvironment.swift */,
+				5BFC52D52F915F8900930D7E /* SearchCoordinator.swift */,
+				5BFC52D72F916E8000930D7E /* ThemeManager.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -548,6 +554,7 @@
 				A10100000000000000000011 /* PlaylistImportReviewView.swift in Sources */,
 				A10100000000000000000010 /* SearchView.swift in Sources */,
 				A10100000000000000000019 /* BannerOverlayView.swift in Sources */,
+				5BFC52D62F915F8900930D7E /* SearchCoordinator.swift in Sources */,
 				A10100000000000000000014 /* PlaylistDetailView.swift in Sources */,
 				A10100000000000000000006 /* PlaybackManager.swift in Sources */,
 				A1010000000000000000000F /* HomeView.swift in Sources */,
@@ -567,6 +574,7 @@
 				A1010000000000000000000B /* SearchViewModel.swift in Sources */,
 				A10100000000000000000012 /* LibraryView.swift in Sources */,
 				77F76C02288871110034E181 /* SwiftyYTDLApp.swift in Sources */,
+				5BFC52D82F916E8000930D7E /* ThemeManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -743,9 +751,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SwiftyYTDL/Preview Content\"";
+				DEVELOPMENT_TEAM = XYDX9S6A24;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwiftyYTDL/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "shirty's radio";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -755,8 +767,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.kostyshyn.SwiftyYTDL;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ytrihsradio.ytdlplayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -772,9 +784,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SwiftyYTDL/Preview Content\"";
+				DEVELOPMENT_TEAM = XYDX9S6A24;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwiftyYTDL/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "shirty's radio";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -784,8 +800,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.kostyshyn.SwiftyYTDL;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ytrihsradio.ytdlplayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

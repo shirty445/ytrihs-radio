@@ -3,11 +3,60 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var library: MusicLibrary
     @EnvironmentObject private var banners: BannerCenter
+    @EnvironmentObject private var theme: ThemeManager
 
     @StateObject private var viewModel = SettingsViewModel()
 
     var body: some View {
         List {
+            Section("Appearance") {
+                Menu {
+                    ForEach(ThemeManager.Accent.allCases) { accent in
+                        Button {
+                            theme.accent = accent
+                        } label: {
+                            Label {
+                                Text(accent.title)
+                            } icon: {
+                                Circle()
+                                    .fill(accent.color)
+                                    .frame(width: 12, height: 12)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text("Accent Color")
+                        Spacer()
+                        Text(theme.accent.title)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Menu {
+                    ForEach(ThemeManager.Appearance.allCases) { appearance in
+                        Button {
+                            theme.appearance = appearance
+                        } label: {
+                            HStack {
+                                Text(appearance.title)
+                                if theme.appearance == appearance {
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text("Color Scheme")
+                        Spacer()
+                        Text(theme.appearance.title)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             Section("Import Preferences") {
                 Picker("Audio Quality", selection: audioQualityBinding) {
                     ForEach(AudioQualityPreference.allCases) { quality in

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SongRowView: View {
+    @EnvironmentObject private var theme: ThemeManager
     let song: Song
     var subtitle: String? = nil
 
@@ -24,7 +25,7 @@ struct SongRowView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 if song.isFavorite {
                     Image(systemName: "heart.fill")
-                        .foregroundStyle(.pink)
+                        .foregroundStyle(theme.accentColor)
                 }
 
                 Text(song.duration.asDurationText)

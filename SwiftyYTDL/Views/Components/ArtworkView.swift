@@ -3,6 +3,7 @@ import UIKit
 
 struct ArtworkView: View {
     @EnvironmentObject private var library: MusicLibrary
+    @EnvironmentObject private var theme: ThemeManager
 
     let artworkPath: String?
     var cornerRadius: CGFloat = 16
@@ -19,7 +20,7 @@ struct ArtworkView: View {
             } else {
                 ZStack {
                     LinearGradient(
-                        colors: [.orange.opacity(0.9), .pink.opacity(0.65), .brown.opacity(0.45)],
+                        colors: theme.placeholderGradientColors,
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )

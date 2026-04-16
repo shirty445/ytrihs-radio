@@ -4,6 +4,7 @@ struct HomeView: View {
     @EnvironmentObject private var library: MusicLibrary
     @EnvironmentObject private var player: PlaybackManager
     @EnvironmentObject private var importer: ImportCoordinator
+    @EnvironmentObject private var theme: ThemeManager
 
     var body: some View {
         ScrollView {
@@ -82,7 +83,7 @@ struct HomeView: View {
         }
         .background(
             LinearGradient(
-                colors: [.orange.opacity(0.16), .clear, .brown.opacity(0.08)],
+                colors: theme.subtleBackgroundGradientColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -130,7 +131,7 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
-                colors: [.orange, .pink, .brown],
+                colors: theme.strongGradientColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             ),

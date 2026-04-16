@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ImportJobRowView: View {
+    @EnvironmentObject private var theme: ThemeManager
     let job: ImportJobState
     let onRetry: () -> Void
     let onCancel: () -> Void
@@ -28,7 +29,7 @@ struct ImportJobRowView: View {
 
             if job.status == .processing {
                 ProgressView(value: job.progress)
-                    .tint(.orange)
+                    .tint(theme.accentColor)
             }
 
             Text(job.detail)
@@ -56,17 +57,17 @@ struct ImportJobRowView: View {
     private var statusColor: Color {
         switch job.status {
         case .queued:
-            return .orange
+            return theme.accentColor
         case .processing:
-            return .blue
+            return theme.accentSecondaryColor
         case .completed:
-            return .green
+            return theme.accentTertiaryColor
         case .failed:
             return .red
         case .cancelled:
             return .secondary
         case .duplicate:
-            return .purple
+            return theme.accentSecondaryColor
         }
     }
 }

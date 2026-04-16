@@ -1,22 +1,19 @@
 import Combine
 import Foundation
-import UniformTypeIdentifiers
 import YTDLKit
 
 @MainActor
 final class SearchViewModel: ObservableObject {
     @Published var urlText = ""
     @Published var youtubeQuery = ""
-    @Published var playlistDataText = ""
+    @Published var soundcloudQuery = ""
     @Published var selectedQuality: AudioQualityPreference = .bestAvailable
     @Published var queueMissingPlaylistTracks = true
     @Published var isAnalyzing = false
     @Published var singleTrackPreview: ImportCandidate?
     @Published var playlistDraft: PlaylistImportDraft?
     @Published var youtubeResults: [ImportCandidate] = []
-    @Published var isShowingFileImporter = false
-
-    let supportedFileTypes: [UTType] = [.plainText, .json, .commaSeparatedText]
+    @Published var soundcloudResults: [ImportCandidate] = []
 
     func syncPreferences(from library: MusicLibrary) {
         selectedQuality = library.database.preferences.audioQuality
@@ -38,10 +35,12 @@ final class SearchViewModel: ObservableObject {
                 singleTrackPreview = importCandidate(from: track)
                 playlistDraft = nil
                 youtubeResults = []
+                soundcloudResults = []
 
             case .playlist(let playlist):
                 singleTrackPreview = nil
                 youtubeResults = []
+                soundcloudResults = []
                 playlistDraft = await environment.playlistImportService.draftForPlaylistProbe(
                     playlist,
                     sourceDescription: url.absoluteString,
@@ -66,6 +65,7 @@ final class SearchViewModel: ObservableObject {
         do {
             let results = try await environment.bridge.search(query: trimmedQuery, maxResults: 12)
             youtubeResults = results.map(importCandidate(from:))
+            soundcloudResults = []
             singleTrackPreview = nil
             playlistDraft = nil
 
@@ -77,40 +77,28 @@ final class SearchViewModel: ObservableObject {
         }
     }
 
-    func analyzePastedPlaylistData(with environment: AppEnvironment) async {
-        isAnalyzing = true
-        defer { isAnalyzing = false }
-
-        do {
-            singleTrackPreview = nil
-            youtubeResults = []
-            playlistDraft = try await environment.playlistImportService.draftForText(
-                playlistDataText,
-                sourceDescription: "Pasted Playlist Data",
-                suggestedName: "Imported Playlist",
-                library: environment.library
-            )
-        } catch {
-            environment.banners.show(title: "Playlist Analysis Failed", message: error.localizedDescription, isError: true)
+    func searchSoundCloud(with environment: AppEnvironment) async {
+        let trimmedQuery = soundcloudQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else {
+            environment.banners.show(title: "Missing Search", message: "Enter something to search on SoundCloud.", isError: true)
+            return
         }
-    }
 
-    func analyzeFile(at url: URL, with environment: AppEnvironment) async {
         isAnalyzing = true
         defer { isAnalyzing = false }
 
         do {
-            let shouldStop = url.startAccessingSecurityScopedResource()
-            defer {
-                if shouldStop {
-                    url.stopAccessingSecurityScopedResource()
-                }
-            }
-            singleTrackPreview = nil
+            let results = try await environment.bridge.searchSoundCloud(query: trimmedQuery, maxResults: 12)
+            soundcloudResults = results.map(importCandidate(from:))
             youtubeResults = []
-            playlistDraft = try await environment.playlistImportService.draftForFile(at: url, library: environment.library)
+            singleTrackPreview = nil
+            playlistDraft = nil
+
+            if soundcloudResults.isEmpty {
+                environment.banners.show(title: "No Results", message: "No SoundCloud matches were returned for \"\(trimmedQuery)\".", isError: true)
+            }
         } catch {
-            environment.banners.show(title: "File Import Failed", message: error.localizedDescription, isError: true)
+            environment.banners.show(title: "Search Failed", message: error.localizedDescription, isError: true)
         }
     }
 
@@ -151,6 +139,7 @@ final class SearchViewModel: ObservableObject {
         singleTrackPreview = nil
         playlistDraft = nil
         youtubeResults = []
+        soundcloudResults = []
     }
 
     private func importCandidate(from track: YTDLTrackProbe) -> ImportCandidate {

@@ -4,6 +4,7 @@ struct PlaylistDetailView: View {
     @EnvironmentObject private var library: MusicLibrary
     @EnvironmentObject private var player: PlaybackManager
     @EnvironmentObject private var importer: ImportCoordinator
+    @EnvironmentObject private var theme: ThemeManager
 
     let playlistID: UUID
 
@@ -123,8 +124,8 @@ struct PlaylistDetailView: View {
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(.orange.opacity(0.12), in: Capsule())
-                    .foregroundStyle(.orange)
+                    .background(theme.accentColor.opacity(0.12), in: Capsule())
+                    .foregroundStyle(theme.accentColor)
             }
 
             if let note = pending.note {

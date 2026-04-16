@@ -2,13 +2,14 @@ import SwiftUI
 
 struct BannerOverlayView: View {
     @EnvironmentObject private var banners: BannerCenter
+    @EnvironmentObject private var theme: ThemeManager
 
     var body: some View {
         VStack {
             if let banner = banners.currentBanner {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: banner.isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(banner.isError ? .red : .green)
+                        .foregroundStyle(banner.isError ? .red : theme.accentColor)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(banner.title)
@@ -34,10 +35,8 @@ struct BannerOverlayView: View {
                 .padding(.horizontal)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
-
-            Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .top)
         .animation(.spring(response: 0.4, dampingFraction: 0.9), value: banners.currentBanner?.id)
-        .allowsHitTesting(true)
     }
 }

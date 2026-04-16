@@ -3,20 +3,15 @@ import SwiftUI
 struct LibraryView: View {
     @EnvironmentObject private var library: MusicLibrary
     @EnvironmentObject private var player: PlaybackManager
+    @EnvironmentObject private var searchCoordinator: SearchCoordinator
+    @EnvironmentObject private var theme: ThemeManager
 
     @StateObject private var viewModel = LibraryViewModel()
+    @FocusState private var isSearchFocused: Bool
+    private let chromeAnimation = Animation.spring(response: 0.35, dampingFraction: 0.9)
 
     var body: some View {
         List {
-            Section {
-                Picker("Section", selection: $viewModel.selectedSection) {
-                    ForEach(LibraryViewModel.Section.allCases) { section in
-                        Text(section.title).tag(section)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
             switch viewModel.selectedSection {
             case .songs:
                 songsSection(library.songs(matching: viewModel.searchText))
@@ -33,10 +28,114 @@ struct LibraryView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Library")
-        .searchable(text: $viewModel.searchText, prompt: "Search your library")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .applyHiddenNavBarBackgroundIfAvailable()
+        .safeAreaInset(edge: .top, spacing: 0) {
+            topChrome
+        }
+        .animation(chromeAnimation, value: searchCoordinator.isLibrarySearchPresented)
+        .onChange(of: searchCoordinator.isLibrarySearchPresented) { isPresented in
+            if isPresented {
+                isSearchFocused = true
+            } else {
+                isSearchFocused = false
+            }
+        }
         .sheet(item: $viewModel.editedSong) { song in
             EditSongMetadataView(song: song)
+        }
+    }
+
+    private var topChrome: some View {
+        VStack(spacing: 10) {
+            sectionPicker
+
+            if searchCoordinator.isLibrarySearchPresented {
+                librarySearchBar
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .padding(.top, 8)
+        .padding(.bottom, 8)
+    }
+
+    private var sectionPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(LibraryViewModel.Section.allCases) { section in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectedSection = section
+                        }
+                    } label: {
+                        Text(section.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedSection == section ? Color.white : Color.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .contentShape(Capsule(style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .background {
+                        if viewModel.selectedSection == section {
+                            Capsule(style: .continuous)
+                                .fill(theme.accentColor)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private var librarySearchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+
+            TextField("Search your library", text: $viewModel.searchText)
+                .focused($isSearchFocused)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Button("Cancel") {
+                viewModel.searchText = ""
+                withAnimation(chromeAnimation) {
+                    searchCoordinator.isLibrarySearchPresented = false
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background {
+            if #available(iOS 26.0, *) {
+                Capsule()
+                    .fill(.clear)
+                    .glassEffect(.regular.interactive(false), in: Capsule())
+            } else {
+                Capsule()
+                    .fill(.thinMaterial)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
+        .onAppear {
+            isSearchFocused = true
         }
     }
 
@@ -104,7 +203,7 @@ struct LibraryView: View {
                             await library.toggleFavorite(songID: song.id)
                         }
                     }
-                    .tint(.pink)
+                    .tint(theme.accentColor)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {

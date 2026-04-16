@@ -1,5 +1,5 @@
 import Foundation
-import YTDLKit
+@preconcurrency import YTDLKit
 
 actor YTDLBridge {
     private let queue = DispatchQueue(label: "org.kostyshyn.YTRihsRadio.ytdl-bridge")
@@ -30,20 +30,33 @@ actor YTDLBridge {
         }
     }
 
+    func searchSoundCloud(query: String, maxResults: Int = 10) async throws -> [YTDLTrackProbe] {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let results = try YTDL.shared.searchSoundCloud(query, maxResults: maxResults)
+                    continuation.resume(returning: results)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     func download(
         candidate: ImportCandidate,
         quality: AudioQualityPreference,
         outputTemplate: URL,
         onProgress: @escaping @Sendable (Int64, Int64) -> Void
     ) async throws -> URL {
-        try await withCheckedThrowingContinuation { continuation in
+        let resolvedPreference = preference(for: quality)
+        return try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do {
-                    let preference = self.preference(for: quality)
                     try YTDL.shared.downloadAudio(
                         from: candidate.requestURL,
                         playlistIndex: candidate.playlistIndex,
-                        preference: preference,
+                        preference: resolvedPreference,
                         outputTemplate: outputTemplate.path,
                         updateHandler: onProgress,
                         completionHandler: { result in

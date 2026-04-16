@@ -3,21 +3,30 @@ import SwiftUI
 struct PlaylistsView: View {
     @EnvironmentObject private var library: MusicLibrary
     @EnvironmentObject private var player: PlaybackManager
+    @EnvironmentObject private var searchCoordinator: SearchCoordinator
+    @EnvironmentObject private var theme: ThemeManager
 
     @StateObject private var viewModel = PlaylistsViewModel()
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+    private let chromeAnimation = Animation.spring(response: 0.35, dampingFraction: 0.9)
 
     var body: some View {
         List {
-            if library.playlists.isEmpty {
+            let playlists = filteredPlaylists
+
+            if playlists.isEmpty {
                 EmptyStateView(
                     title: "No Playlists Yet",
-                    message: "Create playlists manually or import one from a URL, CSV, JSON, or pasted link list.",
+                    message: searchText.isEmpty
+                        ? "Create playlists manually or import one from a URL, CSV, JSON, or pasted link list."
+                        : "No playlists match your search.",
                     systemImage: "music.note.house.fill"
                 )
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             } else {
-                ForEach(library.playlists) { playlist in
+                ForEach(playlists) { playlist in
                     NavigationLink {
                         PlaylistDetailView(playlistID: playlist.id)
                     } label: {
@@ -26,7 +35,7 @@ struct PlaylistsView: View {
                                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                                     .fill(
                                         LinearGradient(
-                                            colors: [.orange.opacity(0.9), .pink.opacity(0.7), .brown.opacity(0.6)],
+                                            colors: theme.placeholderGradientColors,
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
                                         )
@@ -76,13 +85,29 @@ struct PlaylistsView: View {
                         Button("Rename") {
                             viewModel.startRenaming(playlist)
                         }
-                        .tint(.orange)
+                        .tint(theme.accentColor)
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Playlists")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .applyHiddenNavBarBackgroundIfAvailable()
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if searchCoordinator.isPlaylistsSearchPresented {
+                playlistsSearchBar
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(chromeAnimation, value: searchCoordinator.isPlaylistsSearchPresented)
+        .onChange(of: searchCoordinator.isPlaylistsSearchPresented) { isPresented in
+            if isPresented {
+                isSearchFocused = true
+            } else {
+                isSearchFocused = false
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -110,6 +135,64 @@ struct PlaylistsView: View {
                     viewModel.isShowingRenameSheet = false
                 }
             }
+        }
+    }
+
+    private var playlistsSearchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+
+            TextField("Search playlists", text: $searchText)
+                .focused($isSearchFocused)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Button("Cancel") {
+                searchText = ""
+                withAnimation(chromeAnimation) {
+                    searchCoordinator.isPlaylistsSearchPresented = false
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background {
+            if #available(iOS 26.0, *) {
+                Capsule()
+                    .fill(.clear)
+                    .glassEffect(.regular.interactive(false), in: Capsule())
+            } else {
+                Capsule()
+                    .fill(.thinMaterial)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
+        .onAppear {
+            isSearchFocused = true
+        }
+    }
+
+    private var filteredPlaylists: [PlaylistModel] {
+        guard let query = searchText.trimmedOrNil else { return library.playlists }
+        let normalizedQuery = query.normalizedForMatching
+        return library.playlists.filter { playlist in
+            playlist.name.normalizedForMatching.contains(normalizedQuery)
         }
     }
 

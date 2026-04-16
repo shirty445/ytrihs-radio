@@ -438,6 +438,43 @@ public class YTDL {
 
         return results
     }
+
+    public func searchSoundCloud(_ query: String, maxResults: Int = 10) throws -> [YTDLTrackProbe] {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else {
+            return []
+        }
+
+        let options: PythonObject = [
+            "nocheckcertificate": true,
+            "skip_download": true,
+            "quiet": true,
+            "extract_flat": true
+        ]
+        let ydl = yt_dlp.YoutubeDL(options)
+        let info = try ydl.extract_info.throwing.dynamicallyCall(
+            withKeywordArguments: [
+                "": "scsearch\(maxResults):\(trimmedQuery)",
+                "download": false
+            ]
+        )
+
+        guard let entries = info.checking["entries"] else {
+            return []
+        }
+
+        let searchURL = URL(string: "https://soundcloud.com/search?q=\(trimmedQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+            ?? URL(string: "https://soundcloud.com")!
+
+        var results: [YTDLTrackProbe] = []
+        for entry in entries {
+            if let track = try? audioTrack(from: entry, browserURL: searchURL, playlistIndex: nil) {
+                results.append(track)
+            }
+        }
+
+        return results
+    }
     
     // MARK: -
 

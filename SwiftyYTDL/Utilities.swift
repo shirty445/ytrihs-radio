@@ -1,4 +1,45 @@
 import Foundation
+import SwiftUI
+
+#if canImport(UIKit)
+import UIKit
+#endif
+
+struct PressableScaleEffect: ViewModifier {
+    let pressedScale: CGFloat
+    let animation: Animation
+
+    @GestureState private var isPressed = false
+
+    init(
+        pressedScale: CGFloat = 1.03,
+        animation: Animation = .spring(response: 0.28, dampingFraction: 0.88)
+    ) {
+        self.pressedScale = pressedScale
+        self.animation = animation
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPressed ? pressedScale : 1)
+            .animation(animation, value: isPressed)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($isPressed) { _, state, _ in
+                        state = true
+                    }
+            )
+    }
+}
+
+extension View {
+    func pressableScaleEffect(
+        pressedScale: CGFloat = 1.03,
+        animation: Animation = .spring(response: 0.28, dampingFraction: 0.88)
+    ) -> some View {
+        modifier(PressableScaleEffect(pressedScale: pressedScale, animation: animation))
+    }
+}
 
 enum MusicFormatting {
     static let bytes: ByteCountFormatter = {
@@ -108,3 +149,17 @@ extension Array where Element == Song {
         }
     }
 }
+
+#if canImport(UIKit)
+extension View {
+    @ViewBuilder
+    func applyHiddenNavBarBackgroundIfAvailable() -> some View {
+        if #available(iOS 16.0, *) {
+            toolbarBackground(.hidden, for: .navigationBar)
+        } else {
+            self
+        }
+    }
+}
+
+#endif

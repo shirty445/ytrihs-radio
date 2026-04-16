@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PlayerView: View {
     @EnvironmentObject private var player: PlaybackManager
+    @EnvironmentObject private var theme: ThemeManager
     let onClose: () -> Void
 
     var body: some View {
@@ -93,7 +94,7 @@ struct PlayerView: View {
                     }
                     .background(
                         LinearGradient(
-                            colors: [.orange.opacity(0.2), .pink.opacity(0.12), .clear],
+                            colors: theme.subtleBackgroundGradientColors,
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -145,6 +146,7 @@ private struct QueueEntry: Identifiable {
 }
 
 private struct QueueEntryRow: View {
+    @EnvironmentObject private var theme: ThemeManager
     let entry: QueueEntry
     let isCurrent: Bool
 
@@ -161,7 +163,7 @@ private struct QueueEntryRow: View {
             Spacer()
             if isCurrent {
                 Image(systemName: "speaker.wave.2.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(theme.accentColor)
             }
         }
         .padding(12)

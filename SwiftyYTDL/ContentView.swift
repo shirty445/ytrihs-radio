@@ -2,42 +2,82 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var environment: AppEnvironment
+    @EnvironmentObject private var player: PlaybackManager
+    @EnvironmentObject private var searchCoordinator: SearchCoordinator
+    @EnvironmentObject private var theme: ThemeManager
     @State private var selectedTab: AppTab = .home
     @State private var isPlayerPresented = false
+    @State private var pendingFindSearchPresentation = false
+    private let miniPlayerAnimation = Animation.spring(response: 0.35, dampingFraction: 0.9)
 
     var body: some View {
-        ZStack {
-            shellBackground
-                .ignoresSafeArea()
+        GeometryReader { proxy in
+            ZStack {
+                shellBackground
+                    .ignoresSafeArea()
 
-            navigationContainer {
-                currentTabView
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 6) {
-                MiniPlayerView {
-                    isPlayerPresented = true
+                navigationContainer {
+                    currentTabView
                 }
-                customTabBar
+            }
+            .overlay(alignment: .bottom) {
+                bottomOverlay(proxy: proxy)
+                    .offset(y: proxy.safeAreaInsets.bottom)
             }
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .sheet(isPresented: $isPlayerPresented) {
             playerSheet
         }
-        .onChange(of: environment.player.currentSong?.id) { newValue in
+        .onChange(of: player.currentSong?.id) { newValue in
             if newValue == nil {
                 isPlayerPresented = false
             }
+        }
+        .onChange(of: selectedTab) { _ in
+            searchCoordinator.reset()
+
+            if selectedTab == .search, pendingFindSearchPresentation {
+                searchCoordinator.isFindSearchPresented = true
+            }
+            pendingFindSearchPresentation = false
         }
         .overlay(alignment: .top) {
             BannerOverlayView()
                 .padding(.top, 8)
         }
-        .environmentObject(environment.library)
-        .environmentObject(environment.player)
-        .environmentObject(environment.importer)
-        .environmentObject(environment.banners)
+    }
+
+    @ViewBuilder
+    private func bottomOverlay(proxy: GeometryProxy) -> some View {
+        let outerMargin: CGFloat = 16
+        let spacing: CGFloat = 10
+        let controlSize: CGFloat = 64
+        let availableWidth = max(0, proxy.size.width - outerMargin * 2)
+        let navWidth = max(0, availableWidth - controlSize - spacing)
+        let bottomPadding = outerMargin
+
+        VStack(alignment: .leading, spacing: 10) {
+            if player.currentSong != nil {
+                MiniPlayerView {
+                    isPlayerPresented = true
+                }
+                .frame(width: availableWidth, alignment: .leading)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            HStack(spacing: spacing) {
+                navigationBar
+                    .frame(width: navWidth, height: controlSize)
+
+                searchButton
+                    .frame(width: controlSize, height: controlSize)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, outerMargin)
+        .padding(.bottom, bottomPadding)
+        .animation(miniPlayerAnimation, value: player.currentSong?.id)
     }
 
     @ViewBuilder
@@ -56,53 +96,55 @@ struct ContentView: View {
         }
     }
 
-    private var customTabBar: some View {
-        VStack(spacing: 0) {
-            Divider()
-
-            HStack(spacing: 0) {
-                ForEach(AppTab.allCases) { tab in
-                    Button {
-                        selectedTab = tab
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: tab.systemImage)
-                                .font(.system(size: 18, weight: selectedTab == tab ? .semibold : .regular))
-                            Text(tab.title)
-                                .font(.caption2.weight(selectedTab == tab ? .semibold : .medium))
-                        }
-                        .foregroundStyle(selectedTab == tab ? Color.primary : Color.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 9)
-                        .padding(.bottom, 6)
-                        .background {
-                            if selectedTab == tab {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(.white.opacity(0.22))
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 2)
-                            }
-                        }
+    private var navigationBar: some View {
+        HStack(spacing: 0) {
+            ForEach(AppTab.allCases) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.systemImage)
+                            .font(.system(size: 18, weight: selectedTab == tab ? .semibold : .regular))
+                        Text(tab.title)
+                            .font(.caption2.weight(selectedTab == tab ? .semibold : .medium))
                     }
-                    .buttonStyle(.plain)
+                    .foregroundStyle(selectedTab == tab ? Color.primary : Color.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(.white.opacity(0.22))
-                    )
-                    .shadow(color: .black.opacity(0.06), radius: 14, y: 6)
-            )
-            .padding(.horizontal, 12)
-            .padding(.top, 6)
-            .padding(.bottom, 4)
         }
-        .background(.ultraThinMaterial)
+        .frame(height: 62)
+        .padding(.horizontal, 8)
+        .modifier(FloatingTabBarGlass())
+    }
+
+    private var searchButton: some View {
+        Button {
+            handleSearchButtonTapped()
+        } label: {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 18, weight: .semibold))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .modifier(SearchButtonGlass())
+    }
+
+    private func handleSearchButtonTapped() {
+        switch selectedTab {
+        case .library:
+            searchCoordinator.isLibrarySearchPresented = true
+        case .playlists:
+            searchCoordinator.isPlaylistsSearchPresented = true
+        case .search:
+            searchCoordinator.isFindSearchPresented = true
+        default:
+            pendingFindSearchPresentation = true
+            selectedTab = .search
+        }
     }
 
     @ViewBuilder
@@ -136,15 +178,60 @@ struct ContentView: View {
     }
 
     private var shellBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.97, green: 0.95, blue: 0.92),
-                Color(red: 0.99, green: 0.98, blue: 0.96),
-                Color(red: 0.93, green: 0.92, blue: 0.90)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        ZStack {
+            Color(.systemBackground)
+            LinearGradient(
+                colors: theme.subtleBackgroundGradientColors,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+}
+
+private struct FloatingTabBarGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular.interactive(false), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .strokeBorder(.white.opacity(0.18))
+                        .allowsHitTesting(false)
+                }
+                .shadow(color: .white.opacity(0.16), radius: 1, y: 1)
+                .shadow(color: .black.opacity(0.12), radius: 14, y: 8)
+                .pressableScaleEffect(pressedScale: 1.03)
+        } else {
+            content
+                .background {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea(edges: .bottom)
+                }
+        }
+    }
+}
+
+private struct SearchButtonGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular.interactive(false), in: .circle)
+                .overlay {
+                    Circle()
+                        .strokeBorder(.white.opacity(0.18))
+                        .allowsHitTesting(false)
+                }
+                .pressableScaleEffect(pressedScale: 1.06)
+        } else {
+            content
+                .background {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .ignoresSafeArea(edges: .bottom)
+                }
+        }
     }
 }
 private enum AppTab: String, CaseIterable, Identifiable {
@@ -161,7 +248,7 @@ private enum AppTab: String, CaseIterable, Identifiable {
         case .home:
             return "Home"
         case .search:
-            return "Search"
+            return "Find"
         case .library:
             return "Library"
         case .playlists:
@@ -176,7 +263,7 @@ private enum AppTab: String, CaseIterable, Identifiable {
         case .home:
             return "house.fill"
         case .search:
-            return "magnifyingglass"
+            return "music.note"
         case .library:
             return "square.stack.fill"
         case .playlists:

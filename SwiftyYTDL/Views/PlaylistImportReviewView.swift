@@ -7,6 +7,7 @@ struct PlaylistImportReviewView: View {
     let onConfirm: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var theme: ThemeManager
 
     var body: some View {
         NavigationView {
@@ -79,11 +80,11 @@ struct PlaylistImportReviewView: View {
     private func statusColor(for status: PlaylistReviewStatus) -> Color {
         switch status {
         case .matched:
-            return .green
+            return theme.accentTertiaryColor
         case .needsImport:
-            return .orange
+            return theme.accentColor
         case .duplicate:
-            return .purple
+            return theme.accentSecondaryColor
         case .failed:
             return .red
         }
