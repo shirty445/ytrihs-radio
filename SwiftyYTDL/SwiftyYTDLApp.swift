@@ -1,19 +1,18 @@
-//
-//  SwiftyYTDLApp.swift
-//  SwiftyYTDL
-//
-//  Created by Danylo Kostyshyn on 20.07.2022.
-//
-
 import SwiftUI
 
 @main
 struct SwiftyYTDLApp: App {
+    @StateObject private var environment = AppEnvironment()
+
     var body: some Scene {
         WindowGroup {
-            NavigationView {
-                ContentView(viewModel: ContentViewModel())
-            }.navigationViewStyle(.stack)
+            ContentView()
+                .environmentObject(environment)
+                .task {
+                    await environment.startup()
+                }
+                .tint(.orange)
+                .preferredColorScheme(nil)
         }
     }
 }

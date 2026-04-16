@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		772332CC288FA77900CC3954 /* PhotosManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772332CB288FA77900CC3954 /* PhotosManager.swift */; };
 		7768684B2891080B0053CF2E /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = 7768684A2891080B0053CF2E /* ZipArchive */; };
 		7768685328910C290053CF2E /* python.zip in Resources */ = {isa = PBXBuildFile; fileRef = 7768685228910C290053CF2E /* python.zip */; };
 		7779A14B28911735000AD646 /* yt-dlp.zip in Resources */ = {isa = PBXBuildFile; fileRef = 7779A14A28911735000AD646 /* yt-dlp.zip */; };
@@ -16,7 +15,6 @@
 		778E8C1B288E6E3900839742 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 778E8C14288E6E3900839742 /* Python.xcframework */; };
 		778E8C1D288E6E3900839742 /* OpenSSL.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 778E8C15288E6E3900839742 /* OpenSSL.xcframework */; };
 		778E8C1F288E6E3900839742 /* XZ.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 778E8C16288E6E3900839742 /* XZ.xcframework */; };
-		77923C822B2A3284009FCBB5 /* YTDL.plist in Resources */ = {isa = PBXBuildFile; fileRef = 77923C812B2A3284009FCBB5 /* YTDL.plist */; };
 		77F76C02288871110034E181 /* SwiftyYTDLApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F76C01288871110034E181 /* SwiftyYTDLApp.swift */; };
 		77F76C04288871110034E181 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F76C03288871110034E181 /* ContentView.swift */; };
 		77F76C06288871150034E181 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 77F76C05288871150034E181 /* Assets.xcassets */; };
@@ -32,8 +30,35 @@
 		77F776AC2888FE910034E181 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 77F776AA2888FE4E0034E181 /* libz.tbd */; };
 		77F776B0288926480034E181 /* YTDLKit_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 77F776AF288926430034E181 /* YTDLKit_Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		77F776B528892F020034E181 /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 77F776B428892F020034E181 /* PythonKit */; };
-		77F776BD288C6D8C0034E181 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F776BC288C6D8C0034E181 /* ContentViewModel.swift */; };
 		77F776BF288C6DC80034E181 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F776BE288C6DC80034E181 /* LoadingView.swift */; };
+		A10100000000000000000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000001 /* AppEnvironment.swift */; };
+		A10100000000000000000002 /* MusicModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000002 /* MusicModels.swift */; };
+		A10100000000000000000003 /* BannerCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000003 /* BannerCenter.swift */; };
+		A10100000000000000000004 /* FileStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000004 /* FileStorageManager.swift */; };
+		A10100000000000000000005 /* MusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000005 /* MusicLibrary.swift */; };
+		A10100000000000000000006 /* PlaybackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000006 /* PlaybackManager.swift */; };
+		A10100000000000000000007 /* PlaylistImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000007 /* PlaylistImportService.swift */; };
+		A10100000000000000000008 /* ImportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000008 /* ImportCoordinator.swift */; };
+		A10100000000000000000009 /* YTDLBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000009 /* YTDLBridge.swift */; };
+		A1010000000000000000000B /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000000B /* SearchViewModel.swift */; };
+		A1010000000000000000000C /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000000C /* LibraryViewModel.swift */; };
+		A1010000000000000000000D /* PlaylistsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000000D /* PlaylistsViewModel.swift */; };
+		A1010000000000000000000E /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000000E /* SettingsViewModel.swift */; };
+		A1010000000000000000000F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000000F /* HomeView.swift */; };
+		A10100000000000000000010 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000010 /* SearchView.swift */; };
+		A10100000000000000000011 /* PlaylistImportReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000011 /* PlaylistImportReviewView.swift */; };
+		A10100000000000000000012 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000012 /* LibraryView.swift */; };
+		A10100000000000000000013 /* PlaylistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000013 /* PlaylistsView.swift */; };
+		A10100000000000000000014 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000014 /* PlaylistDetailView.swift */; };
+		A10100000000000000000015 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000015 /* PlayerView.swift */; };
+		A10100000000000000000016 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000016 /* SettingsView.swift */; };
+		A10100000000000000000017 /* ArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000017 /* ArtworkView.swift */; };
+		A10100000000000000000018 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000018 /* EmptyStateView.swift */; };
+		A10100000000000000000019 /* BannerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10100000000000000000019 /* BannerOverlayView.swift */; };
+		A1010000000000000000001A /* SongRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000001A /* SongRowView.swift */; };
+		A1010000000000000000001B /* ImportJobRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000001B /* ImportJobRowView.swift */; };
+		A1010000000000000000001C /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000001C /* MiniPlayerView.swift */; };
+		A1010000000000000000001D /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1010000000000000000001D /* Utilities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,7 +112,6 @@
 /* Begin PBXFileReference section */
 		770D21F8288E3EC000B3142A /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		7719953A2891AC40002D2CE7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		772332CB288FA77900CC3954 /* PhotosManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosManager.swift; sourceTree = "<group>"; };
 		7768685228910C290053CF2E /* python.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; name = python.zip; path = "Thirdparties/Python-iOS-support/Python/Resources/python.zip"; sourceTree = SOURCE_ROOT; };
 		7779A14A28911735000AD646 /* yt-dlp.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; name = "yt-dlp.zip"; path = "Thirdparties/yt-dlp.zip"; sourceTree = SOURCE_ROOT; };
 		778E8C12288E6E3900839742 /* libFFI.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libFFI.xcframework; path = "Thirdparties/Python-iOS-support/libFFI.xcframework"; sourceTree = "<group>"; };
@@ -110,8 +134,35 @@
 		77F776A92888FE430034E181 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		77F776AA2888FE4E0034E181 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		77F776AF288926430034E181 /* YTDLKit_Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YTDLKit_Private.h; sourceTree = "<group>"; };
-		77F776BC288C6D8C0034E181 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		77F776BE288C6DC80034E181 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		B10100000000000000000001 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		B10100000000000000000002 /* MusicModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModels.swift; sourceTree = "<group>"; };
+		B10100000000000000000003 /* BannerCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerCenter.swift; sourceTree = "<group>"; };
+		B10100000000000000000004 /* FileStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStorageManager.swift; sourceTree = "<group>"; };
+		B10100000000000000000005 /* MusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibrary.swift; sourceTree = "<group>"; };
+		B10100000000000000000006 /* PlaybackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackManager.swift; sourceTree = "<group>"; };
+		B10100000000000000000007 /* PlaylistImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistImportService.swift; sourceTree = "<group>"; };
+		B10100000000000000000008 /* ImportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportCoordinator.swift; sourceTree = "<group>"; };
+		B10100000000000000000009 /* YTDLBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLBridge.swift; sourceTree = "<group>"; };
+		B1010000000000000000000B /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		B1010000000000000000000C /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		B1010000000000000000000D /* PlaylistsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistsViewModel.swift; sourceTree = "<group>"; };
+		B1010000000000000000000E /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		B1010000000000000000000F /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B10100000000000000000010 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		B10100000000000000000011 /* PlaylistImportReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistImportReviewView.swift; sourceTree = "<group>"; };
+		B10100000000000000000012 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		B10100000000000000000013 /* PlaylistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistsView.swift; sourceTree = "<group>"; };
+		B10100000000000000000014 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+		B10100000000000000000015 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		B10100000000000000000016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B10100000000000000000017 /* ArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkView.swift; sourceTree = "<group>"; };
+		B10100000000000000000018 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B10100000000000000000019 /* BannerOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerOverlayView.swift; sourceTree = "<group>"; };
+		B1010000000000000000001A /* SongRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongRowView.swift; sourceTree = "<group>"; };
+		B1010000000000000000001B /* ImportJobRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportJobRowView.swift; sourceTree = "<group>"; };
+		B1010000000000000000001C /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
+		B1010000000000000000001D /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -202,9 +253,13 @@
 			children = (
 				77F76C01288871110034E181 /* SwiftyYTDLApp.swift */,
 				77F76C03288871110034E181 /* ContentView.swift */,
-				77F776BC288C6D8C0034E181 /* ContentViewModel.swift */,
 				77F776BE288C6DC80034E181 /* LoadingView.swift */,
-				772332CB288FA77900CC3954 /* PhotosManager.swift */,
+				B1010000000000000000001D /* Utilities.swift */,
+				C10100000000000000000001 /* App */,
+				C10100000000000000000002 /* Models */,
+				C10100000000000000000003 /* Services */,
+				C10100000000000000000004 /* ViewModels */,
+				C10100000000000000000005 /* Views */,
 				7719953B2891AC7D002D2CE7 /* Resources */,
 				77F76C05288871150034E181 /* Assets.xcassets */,
 				77F76C07288871150034E181 /* Preview Content */,
@@ -253,6 +308,76 @@
 				77F776A92888FE430034E181 /* libsqlite3.tbd */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C10100000000000000000001 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B10100000000000000000001 /* AppEnvironment.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C10100000000000000000002 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B10100000000000000000002 /* MusicModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C10100000000000000000003 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B10100000000000000000003 /* BannerCenter.swift */,
+				B10100000000000000000004 /* FileStorageManager.swift */,
+				B10100000000000000000005 /* MusicLibrary.swift */,
+				B10100000000000000000006 /* PlaybackManager.swift */,
+				B10100000000000000000007 /* PlaylistImportService.swift */,
+				B10100000000000000000008 /* ImportCoordinator.swift */,
+				B10100000000000000000009 /* YTDLBridge.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C10100000000000000000004 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B1010000000000000000000B /* SearchViewModel.swift */,
+				B1010000000000000000000C /* LibraryViewModel.swift */,
+				B1010000000000000000000D /* PlaylistsViewModel.swift */,
+				B1010000000000000000000E /* SettingsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		C10100000000000000000005 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B1010000000000000000000F /* HomeView.swift */,
+				B10100000000000000000010 /* SearchView.swift */,
+				B10100000000000000000011 /* PlaylistImportReviewView.swift */,
+				B10100000000000000000012 /* LibraryView.swift */,
+				B10100000000000000000013 /* PlaylistsView.swift */,
+				B10100000000000000000014 /* PlaylistDetailView.swift */,
+				B10100000000000000000015 /* PlayerView.swift */,
+				B10100000000000000000016 /* SettingsView.swift */,
+				C10100000000000000000006 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C10100000000000000000006 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				B10100000000000000000017 /* ArtworkView.swift */,
+				B10100000000000000000018 /* EmptyStateView.swift */,
+				B10100000000000000000019 /* BannerOverlayView.swift */,
+				B1010000000000000000001A /* SongRowView.swift */,
+				B1010000000000000000001B /* ImportJobRowView.swift */,
+				B1010000000000000000001C /* MiniPlayerView.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -339,7 +464,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1320;
-				LastUpgradeCheck = 1320;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					77F76BFD288871110034E181 = {
 						CreatedOnToolsVersion = 13.2.1;
@@ -394,7 +519,6 @@
 			files = (
 				7768685328910C290053CF2E /* python.zip in Resources */,
 				7779A14B28911735000AD646 /* yt-dlp.zip in Resources */,
-				77923C822B2A3284009FCBB5 /* YTDL.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,11 +536,37 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10100000000000000000016 /* SettingsView.swift in Sources */,
+				A10100000000000000000008 /* ImportCoordinator.swift in Sources */,
+				A1010000000000000000001C /* MiniPlayerView.swift in Sources */,
+				A10100000000000000000015 /* PlayerView.swift in Sources */,
+				A10100000000000000000017 /* ArtworkView.swift in Sources */,
+				A10100000000000000000009 /* YTDLBridge.swift in Sources */,
+				A10100000000000000000002 /* MusicModels.swift in Sources */,
+				A1010000000000000000000D /* PlaylistsViewModel.swift in Sources */,
+				A10100000000000000000004 /* FileStorageManager.swift in Sources */,
+				A10100000000000000000011 /* PlaylistImportReviewView.swift in Sources */,
+				A10100000000000000000010 /* SearchView.swift in Sources */,
+				A10100000000000000000019 /* BannerOverlayView.swift in Sources */,
+				A10100000000000000000014 /* PlaylistDetailView.swift in Sources */,
+				A10100000000000000000006 /* PlaybackManager.swift in Sources */,
+				A1010000000000000000000F /* HomeView.swift in Sources */,
+				A1010000000000000000001B /* ImportJobRowView.swift in Sources */,
+				A1010000000000000000000E /* SettingsViewModel.swift in Sources */,
+				A10100000000000000000013 /* PlaylistsView.swift in Sources */,
+				A10100000000000000000018 /* EmptyStateView.swift in Sources */,
+				A10100000000000000000001 /* AppEnvironment.swift in Sources */,
+				A10100000000000000000005 /* MusicLibrary.swift in Sources */,
+				A1010000000000000000001A /* SongRowView.swift in Sources */,
+				A1010000000000000000000C /* LibraryViewModel.swift in Sources */,
+				A10100000000000000000003 /* BannerCenter.swift in Sources */,
 				77F76C04288871110034E181 /* ContentView.swift in Sources */,
-				772332CC288FA77900CC3954 /* PhotosManager.swift in Sources */,
 				77F776BF288C6DC80034E181 /* LoadingView.swift in Sources */,
+				A1010000000000000000001D /* Utilities.swift in Sources */,
+				A10100000000000000000007 /* PlaylistImportService.swift in Sources */,
+				A1010000000000000000000B /* SearchViewModel.swift in Sources */,
+				A10100000000000000000012 /* LibraryView.swift in Sources */,
 				77F76C02288871110034E181 /* SwiftyYTDLApp.swift in Sources */,
-				77F776BD288C6D8C0034E181 /* ContentViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -494,8 +644,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -515,6 +667,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				VALID_ARCHS = "x86_64 arm64 arm64e";
@@ -557,8 +710,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -572,6 +727,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -582,18 +738,14 @@
 		77F76C0D288871150034E181 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SwiftyYTDL/Preview Content\"";
-				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwiftyYTDL/Resources/Info.plist;
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save videos";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Save videos";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -615,18 +767,14 @@
 		77F76C0E288871150034E181 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SwiftyYTDL/Preview Content\"";
-				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SwiftyYTDL/Resources/Info.plist;
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save videos";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Save videos";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -649,13 +797,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YTDLKit/Resources/YTDL.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -667,6 +816,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				MODULEMAP_FILE = "$(SRCROOT)/YTDLKit/Modules/module.modulemap";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++17";
 				PRODUCT_BUNDLE_IDENTIFIER = org.kostyshyn.YTDLKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -684,13 +834,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YTDLKit/Resources/YTDL.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -702,6 +853,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				MODULEMAP_FILE = "$(SRCROOT)/YTDLKit/Modules/module.modulemap";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++17";
 				PRODUCT_BUNDLE_IDENTIFIER = org.kostyshyn.YTDLKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -717,10 +869,8 @@
 		77F76C30288872920034E181 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.kostyshyn.YTDLKitTests;
@@ -736,10 +886,8 @@
 		77F76C31288872920034E181 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DBR2MMCRF5;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.kostyshyn.YTDLKitTests;

@@ -11,10 +11,79 @@ import Darwin
 import PythonKit
 import ZipArchive
 
-extension String: LocalizedError {
+extension String: @retroactive Error {}
+extension String: @retroactive LocalizedError {
     
     public var errorDescription: String? { return self }
 
+}
+
+public enum YTDLAudioDownloadPreference: String, Hashable {
+    case bestAvailable
+    case aacPreferred
+    case dataSaver
+
+    var formatSelector: String {
+        switch self {
+        case .bestAvailable:
+            return "bestaudio[ext=m4a]/bestaudio[acodec*=aac]/bestaudio[ext=mp4]/bestaudio/best"
+        case .aacPreferred:
+            return "bestaudio[ext=m4a]/bestaudio[acodec*=aac]/bestaudio/best"
+        case .dataSaver:
+            return "worstaudio/bestaudio/best"
+        }
+    }
+}
+
+public struct YTDLTrackProbe: Hashable, Identifiable {
+    public let id: String
+    public let title: String
+    public let artist: String
+    public let albumTitle: String
+    public let duration: TimeInterval
+    public let thumbnailURL: URL?
+    public let requestURL: URL
+    public let displayURL: URL?
+    public let playlistIndex: Int?
+
+    public init(
+        id: String,
+        title: String,
+        artist: String,
+        albumTitle: String,
+        duration: TimeInterval,
+        thumbnailURL: URL?,
+        requestURL: URL,
+        displayURL: URL?,
+        playlistIndex: Int?
+    ) {
+        self.id = id
+        self.title = title
+        self.artist = artist
+        self.albumTitle = albumTitle
+        self.duration = duration
+        self.thumbnailURL = thumbnailURL
+        self.requestURL = requestURL
+        self.displayURL = displayURL
+        self.playlistIndex = playlistIndex
+    }
+}
+
+public struct YTDLPlaylistProbe: Hashable {
+    public let title: String
+    public let requestURL: URL
+    public let entries: [YTDLTrackProbe]
+
+    public init(title: String, requestURL: URL, entries: [YTDLTrackProbe]) {
+        self.title = title
+        self.requestURL = requestURL
+        self.entries = entries
+    }
+}
+
+public enum YTDLImportProbe: Hashable {
+    case single(YTDLTrackProbe)
+    case playlist(YTDLPlaylistProbe)
 }
 
 public class YTDL {
@@ -111,6 +180,8 @@ public class YTDL {
             .appendingPathComponent("yt-dlp", isDirectory: true).path
         let modulePath = documentsDirectory
             .appendingPathComponent("yt-dlp/yt-dlp").path
+        let unpackedModulePath = documentsDirectory
+            .appendingPathComponent("yt-dlp/yt_dlp_runtime", isDirectory: true).path
         let verFilePath = URL(fileURLWithPath: moduleDestPath)
             .appendingPathComponent(".version").path
 
@@ -130,13 +201,15 @@ public class YTDL {
             )
         }
 
+        try preparePatchedYTDLModule(from: modulePath, unpackedModulePath: unpackedModulePath)
+
         // Add module to `sys.path`
         guard
             let sys = try? Python.attemptImport("sys")
         else {
             throw "Failed to import `sys`"
         }
-        sys.path.insert(1, modulePath)
+        sys.path.insert(1, unpackedModulePath)
         
         // Add module to `sys.path`
         guard
@@ -169,6 +242,28 @@ public class YTDL {
             encoding: .utf8
         )
     }
+
+    private func preparePatchedYTDLModule(from zipAppPath: String, unpackedModulePath: String) throws {
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: unpackedModulePath) {
+            try? fileManager.removeItem(atPath: unpackedModulePath)
+        }
+
+        let zipfile = Python.import("zipfile")
+        let zipArchive = zipfile.ZipFile(zipAppPath)
+        zipArchive.extractall(unpackedModulePath)
+
+        let videoExtractorPath = URL(fileURLWithPath: unpackedModulePath)
+            .appendingPathComponent("yt_dlp/extractor/youtube/_video.py").path
+        var videoExtractor = try String(contentsOfFile: videoExtractorPath, encoding: .utf8)
+
+        let originalLine = "        js_runtime_available = any(p.is_available() for p in self._jsc_director.providers.values())"
+        let patchedLine = "        js_runtime_available = False"
+        if videoExtractor.contains(originalLine) {
+            videoExtractor = videoExtractor.replacingOccurrences(of: originalLine, with: patchedLine)
+            try videoExtractor.write(toFile: videoExtractorPath, atomically: true, encoding: .utf8)
+        }
+    }
     
     public func helloWorld() -> Int {
         return 42
@@ -191,11 +286,18 @@ public class YTDL {
             switch status {
             case "downloading":
                 let downloadedBytes = dict["downloaded_bytes"].flatMap({ Int64($0) }) ?? -1
-                let totalBytes = dict["total_bytes"].flatMap({ Int64($0) }) ?? -1
+                let totalBytes = dict["total_bytes"].flatMap({ Int64($0) })
+                    ?? dict["total_bytes_estimate"].flatMap({ Int64($0) })
+                    ?? -1
                 updateHandler(downloadedBytes, totalBytes)
             case "finished":
                 let fileName = dict["filename"].flatMap({ String($0) })!
-                let fileURL = URL(fileURLWithPath: NSTemporaryDirectory() + fileName)
+                let fileURL: URL
+                if fileName.hasPrefix("/") {
+                    fileURL = URL(fileURLWithPath: fileName)
+                } else {
+                    fileURL = URL(fileURLWithPath: NSTemporaryDirectory() + fileName)
+                }
                 completionHandler(.success(fileURL))
             case "error":
                 completionHandler(.failure("`progress_hook` Error"))
@@ -223,7 +325,37 @@ public class YTDL {
                 "download": true
             ])
     }
-    
+
+    public func downloadAudio(
+        from url: URL,
+        playlistIndex: Int? = nil,
+        preference: YTDLAudioDownloadPreference,
+        outputTemplate: String,
+        updateHandler: @escaping ProgressUpdate,
+        completionHandler: @escaping ProgressCompletion
+    ) throws {
+        var options: [String: PythonObject] = [
+            "format": PythonObject(preference.formatSelector),
+            "nocheckcertificate": true,
+            "outtmpl": PythonObject(outputTemplate),
+            "noplaylist": PythonObject(playlistIndex == nil),
+            "fixup": PythonObject("never"),
+            "progress_hooks": PythonObject([statusCallback(updateHandler, completionHandler)])
+        ]
+
+        if let playlistIndex {
+            options["playlist_items"] = PythonObject("\(playlistIndex)")
+        }
+
+        let ydl = yt_dlp.YoutubeDL(PythonObject(options))
+        try ydl.extract_info.throwing.dynamicallyCall(
+            withKeywordArguments: [
+                "": url.absoluteString,
+                "download": true
+            ]
+        )
+    }
+
     public func extractInfo(from url: URL) throws -> [Downloadable] {
         let options: PythonObject = [
             "format": "best",
@@ -249,9 +381,120 @@ public class YTDL {
         
         throw "Unsupported `url`: \(url)"
     }
+
+    public func probeAudioImport(from url: URL) throws -> YTDLImportProbe {
+        let options: PythonObject = [
+            "nocheckcertificate": true,
+            "skip_download": true,
+        ]
+        let ydl = yt_dlp.YoutubeDL(options)
+        let info = try ydl.extract_info.throwing.dynamicallyCall(
+            withKeywordArguments: [
+                "": url.absoluteString,
+                "download": false
+            ]
+        )
+
+        if let type = info.checking["_type"].flatMap({ String($0) }), type == "playlist" {
+            return .playlist(try audioPlaylist(from: info, browserURL: url))
+        }
+
+        return .single(try audioTrack(from: info, browserURL: url, playlistIndex: nil))
+    }
+
+    public func searchAudio(_ query: String, maxResults: Int = 10) throws -> [YTDLTrackProbe] {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else {
+            return []
+        }
+
+        let options: PythonObject = [
+            "nocheckcertificate": true,
+            "skip_download": true,
+            "quiet": true,
+            "extract_flat": true
+        ]
+        let ydl = yt_dlp.YoutubeDL(options)
+        let info = try ydl.extract_info.throwing.dynamicallyCall(
+            withKeywordArguments: [
+                "": "ytsearch\(maxResults):\(trimmedQuery)",
+                "download": false
+            ]
+        )
+
+        guard let entries = info.checking["entries"] else {
+            return []
+        }
+
+        let searchURL = URL(string: "https://www.youtube.com/results?search_query=\(trimmedQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+            ?? URL(string: "https://www.youtube.com")!
+
+        var results: [YTDLTrackProbe] = []
+        for entry in entries {
+            if let track = try? audioTrack(from: entry, browserURL: searchURL, playlistIndex: nil) {
+                results.append(track)
+            }
+        }
+
+        return results
+    }
     
     // MARK: -
-    
+
+    private func audioPlaylist(from info: PythonObject, browserURL: URL) throws -> YTDLPlaylistProbe {
+        guard let entries = info.checking["entries"] else {
+            throw "No entries were returned for this playlist"
+        }
+
+        let title = info.checking["title"].flatMap({ String($0) }) ?? "Imported Playlist"
+        var results: [YTDLTrackProbe] = []
+
+        for (offset, entry) in entries.enumerated() {
+            results.append(
+                try audioTrack(
+                    from: entry,
+                    browserURL: browserURL,
+                    playlistIndex: offset + 1
+                )
+            )
+        }
+
+        return YTDLPlaylistProbe(title: title, requestURL: browserURL, entries: results)
+    }
+
+    private func audioTrack(from info: PythonObject, browserURL: URL, playlistIndex: Int?) throws -> YTDLTrackProbe {
+        guard let id = info.checking["id"].flatMap({ String($0) }) else {
+            throw "Failed to resolve the source id for a track"
+        }
+
+        let title = info.checking["title"].flatMap({ String($0) }) ?? "Untitled Track"
+        let artist = info.checking["artist"].flatMap({ String($0) })
+            ?? info.checking["uploader"].flatMap({ String($0) })
+            ?? info.checking["channel"].flatMap({ String($0) })
+            ?? "Unknown Artist"
+        let albumTitle = info.checking["album"].flatMap({ String($0) })
+            ?? info.checking["playlist_title"].flatMap({ String($0) })
+            ?? "Singles"
+        let duration = info.checking["duration"].flatMap({ Double($0) }) ?? 0
+        let thumbnailURL = info.checking["thumbnail"].flatMap({ String($0) }).flatMap(URL.init(string:))
+        let directURL = info.checking["webpage_url"].flatMap({ String($0) }).flatMap(URL.init(string:))
+            ?? info.checking["url"].flatMap({ String($0) }).flatMap(URL.init(string:))
+            ?? info.checking["original_url"].flatMap({ String($0) }).flatMap(URL.init(string:))
+        let requestURL = directURL ?? browserURL
+
+        return YTDLTrackProbe(
+            id: id,
+            title: title,
+            artist: artist,
+            albumTitle: albumTitle,
+            duration: duration,
+            thumbnailURL: thumbnailURL,
+            requestURL: requestURL,
+            displayURL: directURL,
+            playlistIndex: directURL == nil ? playlistIndex : nil
+        )
+    }
+
     private func formats(from info: PythonObject, ydl: PythonObject, browserUrl: URL) throws -> [Format] {
         guard
             let id = info.checking["id"].flatMap({ String($0) }),

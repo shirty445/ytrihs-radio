@@ -1,179 +1,188 @@
-//
-//  ContentView.swift
-//  SwiftyYTDL
-//
-//  Created by Danylo Kostyshyn on 20.07.2022.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    
-    @StateObject var viewModel: ContentViewModel
-    
-    @State var isLoading: Bool = false
-    @State var isActionSheetVisible: Bool = false
-    
-    @State var error: Error?
-    @State var pastedLink: String?
+    @EnvironmentObject private var environment: AppEnvironment
+    @State private var selectedTab: AppTab = .home
+    @State private var isPlayerPresented = false
 
     var body: some View {
         ZStack {
-            VStack {
-            List {
-                pasteboardSection()
-                downloadsSection()
-            #if DEBUG
-                debugResourcesSection()
-            #endif
-            }.listStyle(InsetGroupedListStyle())
-                Text(viewModel.footerText)
-                    .foregroundColor(.secondary)
-                    .font(.callout)
-            }.background(Color(uiColor: .systemGroupedBackground))
-            if isLoading {
-                LoadingView()
-                    .offset(y: -50.0)
+            shellBackground
+                .ignoresSafeArea()
+
+            navigationContainer {
+                currentTabView
             }
         }
-        .navigationTitle("SwiftyYTDL")
-        .confirmationDialog(
-            "Download",
-            isPresented: $isActionSheetVisible,
-            titleVisibility: .visible
-        ) {
-            ForEach(viewModel.items.enumerated().map({ $0 }), id: \.element.id) { idx, item in
-                Button(item.description) {
-                    isActionSheetVisible = false
-                    isLoading = true
-                    viewModel.download(
-                        item, from: item.browserUrl,
-                        playlistIdx: idx + 1,
-                        update: { _, _ in }
-                    ) { result in
-                        defer { isLoading = false }
-                        switch result {
-                        case .success:
-                            break
-                        case .failure(let err):
-                            error = err
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 6) {
+                MiniPlayerView {
+                    isPlayerPresented = true
+                }
+                customTabBar
+            }
+        }
+        .sheet(isPresented: $isPlayerPresented) {
+            playerSheet
+        }
+        .onChange(of: environment.player.currentSong?.id) { newValue in
+            if newValue == nil {
+                isPlayerPresented = false
+            }
+        }
+        .overlay(alignment: .top) {
+            BannerOverlayView()
+                .padding(.top, 8)
+        }
+        .environmentObject(environment.library)
+        .environmentObject(environment.player)
+        .environmentObject(environment.importer)
+        .environmentObject(environment.banners)
+    }
+
+    @ViewBuilder
+    private var currentTabView: some View {
+        switch selectedTab {
+        case .home:
+            HomeView()
+        case .search:
+            SearchView()
+        case .library:
+            LibraryView()
+        case .playlists:
+            PlaylistsView()
+        case .settings:
+            SettingsView()
+        }
+    }
+
+    private var customTabBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            HStack(spacing: 0) {
+                ForEach(AppTab.allCases) { tab in
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.systemImage)
+                                .font(.system(size: 18, weight: selectedTab == tab ? .semibold : .regular))
+                            Text(tab.title)
+                                .font(.caption2.weight(selectedTab == tab ? .semibold : .medium))
+                        }
+                        .foregroundStyle(selectedTab == tab ? Color.primary : Color.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 9)
+                        .padding(.bottom, 6)
+                        .background {
+                            if selectedTab == tab {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(.white.opacity(0.22))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 2)
+                            }
                         }
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            Button("Cancel", role: .cancel) {
-                isActionSheetVisible = false
-            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(.white.opacity(0.22))
+                    )
+                    .shadow(color: .black.opacity(0.06), radius: 14, y: 6)
+            )
+            .padding(.horizontal, 12)
+            .padding(.top, 6)
+            .padding(.bottom, 4)
         }
-        .errorAlert(error: $error)
+        .background(.ultraThinMaterial)
     }
-    
-    func pasteboardSection() -> some View {
-        Section {
-            Button(action: {
-                pastedLink = UIPasteboard.general.string
-            }) {
-                Text("Paste URL")
-            }
-        }.alert("Download", isPresented: .constant($pastedLink.wrappedValue != nil)) {
-            Button(action: {
-                $pastedLink.wrappedValue = nil
-            }) {
-                Text("Cancel")                
-            }
-            Button(action: {
-                defer {
-                    $pastedLink.wrappedValue = nil
-                }
-                
-                guard
-                    let url = pastedLink.flatMap({ URL(string: $0) })
-                else {
-                    error = "Invalid URL"
-                    return
-                }
-                
-                isLoading = true
-                viewModel.extractInfo(from: url) { result in
-                    defer {
-                        isLoading = false
-                    }
-                    switch result {
-                    case .success(let value):
-                        isActionSheetVisible = value
-                    case .failure(let err):
-                        isActionSheetVisible = false
-                        error = err
-                    }
-                }
-            }) {
-                Text("Download")
-            }
-        } message: {
-            Text($pastedLink.wrappedValue ?? "")
-        }
-    }
-    
-    func downloadsSection() -> some View {
-        Section {
-            ForEach(viewModel.downloads, id: \.id) { item in
-                VStack(alignment: .leading, spacing: 10.0) {
-                    Text(item.item.title)
-                    switch item.status {
-                    case .initial:
-                        Divider()
-                        Text(viewModel.string(from: item.totalBytesExpectedToWrite))
-                    case .loading:
-                        ProgressView(value: item.progress)
-                        Text("⬇️ " + (viewModel.string(from: item.totalBytesWritten)) + " of " +
-                             (viewModel.string(from: item.totalBytesExpectedToWrite)))
-                    case .finished:
-                        Divider()
-                        Text("✅ " + viewModel.string(from: item.totalBytesExpectedToWrite))
-                    case .error:
-                        Divider()
-                        Text("🛑 " + viewModel.string(from: item.totalBytesExpectedToWrite))
-                    }
-                }.padding([.top, .bottom], 5.0)
-            }
-        }
-    }
-    
-#if DEBUG
-    func debugResourcesSection() -> some View {
-        Section("Debug") {
-            ForEach(viewModel.debugResources, id: \.0) { title, link in
-                Button(action: {
-                    pastedLink = link
-                }) {
-                    Text(title)
-                }
-            }
-        }
-    }
-#endif
-    
-}
 
-extension View {
-    
-    func errorAlert(error: Binding<Error?>, buttonTitle: String = "OK") -> some View {
-        return alert("Error", isPresented: .constant(error.wrappedValue != nil)) {
-            Button(action: {
-                error.wrappedValue = nil
-            }) {
-                Text("OK")
+    @ViewBuilder
+    private func navigationContainer<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        if #available(iOS 16.0, *) {
+            NavigationStack {
+                content()
             }
-        } message: {
-            Text(error.wrappedValue?.localizedDescription ?? "Unknown error")
+        } else {
+            NavigationView {
+                content()
+            }
+            .navigationViewStyle(.stack)
         }
     }
-    
-}
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView(viewModel: ContentViewModel())
+    @ViewBuilder
+    private var playerSheet: some View {
+        if #available(iOS 16.0, *) {
+            PlayerView {
+                isPlayerPresented = false
+            }
+                .presentationDetents([.large])
+        } else {
+            PlayerView {
+                isPlayerPresented = false
+            }
+        }
+    }
+
+    private var shellBackground: some View {
+        LinearGradient(
+            colors: [
+                Color(red: 0.97, green: 0.95, blue: 0.92),
+                Color(red: 0.99, green: 0.98, blue: 0.96),
+                Color(red: 0.93, green: 0.92, blue: 0.90)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 }
+private enum AppTab: String, CaseIterable, Identifiable {
+    case home
+    case search
+    case library
+    case playlists
+    case settings
 
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .home:
+            return "Home"
+        case .search:
+            return "Search"
+        case .library:
+            return "Library"
+        case .playlists:
+            return "Playlists"
+        case .settings:
+            return "Settings"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home:
+            return "house.fill"
+        case .search:
+            return "magnifyingglass"
+        case .library:
+            return "square.stack.fill"
+        case .playlists:
+            return "music.note.list"
+        case .settings:
+            return "gearshape.fill"
+        }
+    }
+}
