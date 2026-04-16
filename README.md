@@ -1,4 +1,7 @@
-# SwiftyYTDL
+# shirty's radio
+
+
+
 
 Thin SwiftUI wrapper around [yt-dlp](https://github.com/yt-dlp/yt-dlp) - popluar Python module for downloading stuff of Youtube, Twtitter, Instagram, TikTok and others.
 
