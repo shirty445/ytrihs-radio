@@ -232,7 +232,7 @@ struct LibraryView: View {
                     AlbumDetailView(album: album)
                 } label: {
                     HStack(spacing: 14) {
-                        ArtworkView(artworkPath: album.artworkPath, cornerRadius: 14, size: 64)
+                        ArtworkView(artworkPath: album.artworkPath, artworkSourceURL: album.artworkSourceURL, cornerRadius: 14, size: 64)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(album.title)
                                 .font(.headline)
@@ -262,7 +262,7 @@ struct LibraryView: View {
                     ArtistDetailView(artist: artist)
                 } label: {
                     HStack(spacing: 14) {
-                        ArtworkView(artworkPath: artist.artworkPath, cornerRadius: 18, size: 64)
+                        ArtworkView(artworkPath: artist.artworkPath, artworkSourceURL: artist.artworkSourceURL, cornerRadius: 18, size: 64)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(artist.name)
                                 .font(.headline)
@@ -285,7 +285,7 @@ private struct AlbumDetailView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 16) {
-                    ArtworkView(artworkPath: album.artworkPath, cornerRadius: 30, size: 180)
+                    ArtworkView(artworkPath: album.artworkPath, artworkSourceURL: album.artworkSourceURL, cornerRadius: 30, size: 180)
                     Text(album.title)
                         .font(.title.weight(.bold))
                     Text(album.artist)
@@ -324,7 +324,7 @@ private struct ArtistDetailView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 16) {
-                    ArtworkView(artworkPath: artist.artworkPath, cornerRadius: 30, size: 180)
+                    ArtworkView(artworkPath: artist.artworkPath, artworkSourceURL: artist.artworkSourceURL, cornerRadius: 30, size: 180)
                     Text(artist.name)
                         .font(.title.weight(.bold))
                     Text("\(artist.songCount) songs • \(artist.totalDuration.asDurationText)")

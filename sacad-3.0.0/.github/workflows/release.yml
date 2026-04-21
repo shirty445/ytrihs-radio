@@ -1,0 +1,107 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "*.*.**"
+      - "*.*.*.**"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  changelog-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+      - run: git cliff -o CHANGELOG_${{ github.ref_name }}.md $(git tag -l | sort -V | tail -n -2 | head -n -1)..HEAD
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG_${{ github.ref_name }}.md
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  bin-linux-x86_64-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+      - run: |
+          sudo apt update
+          sudo apt install musl-tools
+      - run: cargo build --release --target x86_64-unknown-linux-musl
+      - run: |
+          cd target/x86_64-unknown-linux-musl/release/
+          tar -cv sacad sacad_r | gzip -9 > sacad_${{ github.ref_name }}_linux_x86_64.tar.gz
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: target/x86_64-unknown-linux-musl/release/sacad*.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  bin-macos-x86_64-release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-apple-darwin
+      - run: cargo build --release --target x86_64-apple-darwin
+      - run: |
+          cd target/x86_64-apple-darwin/release/
+          tar -cv sacad sacad_r | gzip -9 > sacad_${{ github.ref_name }}_macos_x86_64.tar.gz
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: target/x86_64-apple-darwin/release/sacad*.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  bin-macos-aarch64-release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - run: cargo build --release
+      - run: |
+          cd target/release/
+          tar -cv sacad sacad_r | gzip -9 > sacad_${{ github.ref_name }}_macos_aarch64.tar.gz
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/sacad*.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  bin-windows-x86_64-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-pc-windows-gnu
+      - run: |
+          sudo apt update
+          sudo apt install mingw-w64
+      - run: cargo build --release --target x86_64-pc-windows-gnu
+      - run: |
+          cd target/x86_64-pc-windows-gnu/release/
+          zip -9 sacad_${{ github.ref_name }}_windows_x86_64.zip sacad.exe sacad_r.exe
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: target/x86_64-pc-windows-gnu/release/sacad*.zip
+          token: ${{ secrets.GITHUB_TOKEN }}

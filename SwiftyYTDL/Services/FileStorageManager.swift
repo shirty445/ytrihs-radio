@@ -207,7 +207,9 @@ actor FileStorageManager {
     func deleteAssets(for song: Song) throws {
         try prepareDirectories()
 
-        try? fileManager.removeItem(at: absoluteURL(forStoredPath: song.localFileName))
+        if let localFileName = song.localFileName.trimmedOrNil {
+            try? fileManager.removeItem(at: absoluteURL(forStoredPath: localFileName))
+        }
         try? fileManager.removeItem(at: sidecarURL(for: song.id))
 
         if let artworkPath = song.artworkPath {

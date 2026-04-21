@@ -2,6 +2,7 @@ import AVFoundation
 import MediaPlayer
 import SwiftUI
 import UIKit
+import YTDLKit
 
 @MainActor
 final class PlaybackManager: ObservableObject {
@@ -155,41 +156,36 @@ final class PlaybackManager: ObservableObject {
         currentSong = song
 
         Task {
-            guard let preparedSong = await prepareSongForPlayback(song) else {
+            guard let preparedPlayback = await prepareSongForPlayback(song) else {
                 isPlaying = false
                 return
             }
 
-            currentSong = preparedSong
-            let fileURL = await library.localFileURL(for: preparedSong)
-            if let artworkPath = preparedSong.artworkPath {
-                let artworkURL = await library.storage.absoluteURL(forStoredPath: artworkPath)
-                currentArtworkImage = UIImage(contentsOfFile: artworkURL.path)
-            } else {
-                currentArtworkImage = nil
-            }
-            let item = AVPlayerItem(url: fileURL)
-            player.replaceCurrentItem(with: item)
+            currentSong = preparedPlayback.song
+            currentArtworkImage = await loadArtworkImage(for: preparedPlayback.song)
+            player.replaceCurrentItem(with: preparedPlayback.item)
             player.play()
             isPlaying = true
-            duration = preparedSong.duration
+            duration = preparedPlayback.song.duration
             currentTime = 0
             lastPersistedSecond = 0
 
             if library.database.preferences.saveResumeProgress,
-               preparedSong.resumePosition > 10,
-               preparedSong.resumePosition < max(preparedSong.duration - 10, 10) {
-                await player.seek(to: CMTime(seconds: preparedSong.resumePosition, preferredTimescale: 600))
-                currentTime = preparedSong.resumePosition
+               preparedPlayback.song.resumePosition > 10,
+               preparedPlayback.song.resumePosition < max(preparedPlayback.song.duration - 10, 10) {
+                await player.seek(to: CMTime(seconds: preparedPlayback.song.resumePosition, preferredTimescale: 600))
+                currentTime = preparedPlayback.song.resumePosition
             }
 
             updateNowPlaying()
         }
     }
 
-    private func prepareSongForPlayback(_ song: Song) async -> Song? {
+    private func prepareSongForPlayback(_ song: Song) async -> PreparedPlayback? {
         if await library.hasPlayableLocalAsset(for: song) {
-            return library.song(withID: song.id) ?? song
+            let playableSong = library.song(withID: song.id) ?? song
+            let fileURL = await library.localFileURL(for: playableSong)
+            return PreparedPlayback(song: playableSong, item: AVPlayerItem(url: fileURL))
         }
 
         guard let candidate = playbackCandidate(for: song) else {
@@ -199,6 +195,20 @@ final class PlaybackManager: ObservableObject {
                 isError: true
             )
             return nil
+        }
+
+        if song.isStreamBacked {
+            do {
+                let stream = try await bridge.resolveAudioStream(
+                    candidate: candidate,
+                    quality: library.database.preferences.audioQuality
+                )
+                let playableSong = library.song(withID: song.id) ?? song
+                return PreparedPlayback(song: playableSong, item: playerItem(for: stream))
+            } catch {
+                banners.show(title: "Playback Failed", message: error.localizedDescription, isError: true)
+                return nil
+            }
         }
 
         do {
@@ -223,7 +233,7 @@ final class PlaybackManager: ObservableObject {
                 return nil
             }
 
-            return refreshedSong
+            return PreparedPlayback(song: refreshedSong, item: AVPlayerItem(url: fileURL))
         } catch {
             banners.show(title: "Playback Failed", message: error.localizedDescription, isError: true)
             return nil
@@ -249,6 +259,53 @@ final class PlaybackManager: ObservableObject {
             artworkURL: nil,
             playlistName: nil
         )
+    }
+
+    private func playerItem(for stream: YTDLResolvedAudioStream) -> AVPlayerItem {
+        var options: [String: Any] = [
+            AVURLAssetPreferPreciseDurationAndTimingKey: false
+        ]
+
+        if let userAgent = stream.httpHeaders["User-Agent"] ?? stream.httpHeaders["user-agent"],
+           #available(iOS 16.0, *) {
+            options[AVURLAssetHTTPUserAgentKey] = userAgent
+        }
+
+        let cookies = cookies(from: stream.httpHeaders, for: stream.url)
+        if !cookies.isEmpty {
+            options[AVURLAssetHTTPCookiesKey] = cookies
+            HTTPCookieStorage.shared.setCookies(cookies, for: stream.url, mainDocumentURL: stream.webpageURL ?? stream.url)
+        }
+
+        let asset = AVURLAsset(url: stream.url, options: options)
+        return AVPlayerItem(asset: asset)
+    }
+
+    private func loadArtworkImage(for song: Song) async -> UIImage? {
+        guard let artworkURL = await library.artworkURL(for: song) else { return nil }
+        return await ArtworkImageRepository.image(for: artworkURL)
+    }
+
+    private func cookies(from headers: [String: String], for url: URL) -> [HTTPCookie] {
+        guard let rawCookieHeader = headers["Cookie"] ?? headers["cookie"],
+              let host = url.host else {
+            return []
+        }
+
+        return rawCookieHeader
+            .split(separator: ";")
+            .compactMap { cookiePair in
+                let components = cookiePair.split(separator: "=", maxSplits: 1)
+                guard components.count == 2 else { return nil }
+
+                return HTTPCookie(properties: [
+                    .domain: host,
+                    .path: "/",
+                    .name: String(components[0]).trimmingCharacters(in: .whitespaces),
+                    .value: String(components[1]).trimmingCharacters(in: .whitespaces),
+                    .secure: (url.scheme ?? "").lowercased() == "https" ? "TRUE" : "FALSE"
+                ])
+            }
     }
 
     private func applyQueueOrdering(startingWith songID: UUID?) {
@@ -384,4 +441,9 @@ final class PlaybackManager: ObservableObject {
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
+}
+
+private struct PreparedPlayback {
+    let song: Song
+    let item: AVPlayerItem
 }

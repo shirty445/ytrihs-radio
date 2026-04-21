@@ -75,6 +75,27 @@ actor YTDLBridge {
         }
     }
 
+    func resolveAudioStream(
+        candidate: ImportCandidate,
+        quality: AudioQualityPreference
+    ) async throws -> YTDLResolvedAudioStream {
+        let resolvedPreference = preference(for: quality)
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let stream = try YTDL.shared.resolveAudioStream(
+                        from: candidate.requestURL,
+                        playlistIndex: candidate.playlistIndex,
+                        preference: resolvedPreference
+                    )
+                    continuation.resume(returning: stream)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     private func preference(for quality: AudioQualityPreference) -> YTDLAudioDownloadPreference {
         switch quality {
         case .bestAvailable:

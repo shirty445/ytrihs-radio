@@ -6,6 +6,7 @@ struct ArtworkView: View {
     @EnvironmentObject private var theme: ThemeManager
 
     let artworkPath: String?
+    var artworkSourceURL: String? = nil
     var cornerRadius: CGFloat = 16
     var size: CGFloat? = nil
 
@@ -32,18 +33,30 @@ struct ArtworkView: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .task(id: artworkPath) {
+        .task(id: "\(artworkPath ?? "")|\(artworkSourceURL ?? "")") {
             await loadImage()
         }
     }
 
     private func loadImage() async {
-        guard let artworkPath else {
+        if let artworkPath {
+            let url = await library.storage.absoluteURL(forStoredPath: artworkPath)
+            if let localImage = await ArtworkImageRepository.image(for: url) {
+                image = localImage
+                return
+            }
+        }
+
+        guard let artworkSourceURL,
+              let remoteURL = URL(string: artworkSourceURL) else {
             image = nil
             return
         }
 
-        let url = await library.storage.absoluteURL(forStoredPath: artworkPath)
-        image = UIImage(contentsOfFile: url.path)
+        if let remoteImage = await ArtworkImageRepository.image(for: remoteURL) {
+            image = remoteImage
+        } else {
+            image = nil
+        }
     }
 }

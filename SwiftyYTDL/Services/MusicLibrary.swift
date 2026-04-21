@@ -27,7 +27,7 @@ final class MusicLibrary: ObservableObject {
     }
 
     var offlineSongs: [Song] {
-        songs.filter { !$0.localFileName.isEmpty }
+        songs.filter(\.hasLocalAssetReference)
     }
 
     var playlists: [PlaylistModel] {
@@ -58,6 +58,7 @@ final class MusicLibrary: ObservableObject {
                     title: first.albumTitle,
                     artist: first.artist,
                     artworkPath: sortedSongs.compactMap(\.artworkPath).first,
+                    artworkSourceURL: sortedSongs.compactMap(\.effectiveArtworkSourceURL).first,
                     songs: sortedSongs
                 )
             }
@@ -76,6 +77,7 @@ final class MusicLibrary: ObservableObject {
                 return ArtistSummary(
                     name: first.artist,
                     artworkPath: sortedSongs.compactMap(\.artworkPath).first,
+                    artworkSourceURL: sortedSongs.compactMap(\.effectiveArtworkSourceURL).first,
                     songs: sortedSongs
                 )
             }
@@ -109,8 +111,13 @@ final class MusicLibrary: ObservableObject {
     }
 
     func artworkURL(for song: Song) async -> URL? {
-        guard let artworkPath = song.artworkPath else { return nil }
-        return await storage.absoluteURL(forStoredPath: artworkPath)
+        if let artworkPath = song.artworkPath {
+            return await storage.absoluteURL(forStoredPath: artworkPath)
+        }
+        if let artworkSourceURL = song.effectiveArtworkSourceURL {
+            return URL(string: artworkSourceURL)
+        }
+        return nil
     }
 
     func song(withID id: UUID?) -> Song? {
@@ -183,7 +190,11 @@ final class MusicLibrary: ObservableObject {
         localFileName: String,
         artworkPath: String?
     ) async -> Song {
-        if let existing = findExistingSong(for: candidate) {
+        if let existing = findExistingSong(for: candidate),
+           let index = database.songs.firstIndex(where: { $0.id == existing.id }) {
+            if database.songs[index].artworkSourceURL == nil {
+                database.songs[index].artworkSourceURL = candidate.artworkURL?.absoluteString
+            }
             appendRecentImport(
                 title: candidate.title,
                 artist: candidate.artist,
@@ -191,7 +202,8 @@ final class MusicLibrary: ObservableObject {
                 succeeded: true,
                 detail: "Already existed in the local library"
             )
-            return existing
+            await persistDatabase()
+            return database.songs[index]
         }
 
         let song = Song(
@@ -203,9 +215,11 @@ final class MusicLibrary: ObservableObject {
             albumTitle: candidate.albumTitle.isEmpty ? "Singles" : candidate.albumTitle,
             albumArtist: candidate.artist,
             artworkPath: artworkPath,
+            artworkSourceURL: candidate.artworkURL?.absoluteString,
             localFileName: localFileName,
             duration: candidate.duration,
-            importDate: .now
+            importDate: .now,
+            storageMode: .offline
         )
 
         database.songs.insert(song, at: 0)
@@ -229,8 +243,76 @@ final class MusicLibrary: ObservableObject {
         return song
     }
 
+    func registerStreamedSong(candidate: ImportCandidate) async -> (song: Song, wasInserted: Bool) {
+        if let existing = findExistingSong(for: candidate),
+           let index = database.songs.firstIndex(where: { $0.id == existing.id }) {
+            if database.songs[index].artworkSourceURL == nil {
+                database.songs[index].artworkSourceURL = candidate.artworkURL?.absoluteString
+            }
+            if database.songs[index].artworkPath == nil,
+               let artworkPath = await cachedArtworkPath(for: candidate, songID: existing.id) {
+                database.songs[index].artworkPath = artworkPath
+                do {
+                    try await storage.saveSidecar(for: database.songs[index])
+                } catch {
+                    appendLog(.error, "Sidecar update failed for \(database.songs[index].title): \(error.localizedDescription)")
+                }
+            }
+
+            appendRecentImport(
+                title: database.songs[index].title,
+                artist: database.songs[index].artist,
+                sourceURL: database.songs[index].sourceURL ?? candidate.requestURL.absoluteString,
+                succeeded: true,
+                detail: "Already existed in your library"
+            )
+            await persistDatabase()
+            return (database.songs[index], false)
+        }
+
+        let songID = UUID()
+        let artworkPath = await cachedArtworkPath(for: candidate, songID: songID)
+        let song = Song(
+            id: songID,
+            sourceID: candidate.sourceID,
+            sourceURL: candidate.displayURL?.absoluteString ?? candidate.requestURL.absoluteString,
+            title: candidate.title,
+            artist: candidate.artist,
+            albumTitle: candidate.albumTitle.isEmpty ? "Singles" : candidate.albumTitle,
+            albumArtist: candidate.artist,
+            artworkPath: artworkPath,
+            artworkSourceURL: candidate.artworkURL?.absoluteString,
+            localFileName: "",
+            duration: candidate.duration,
+            importDate: .now,
+            storageMode: .stream
+        )
+
+        database.songs.insert(song, at: 0)
+        resolvePendingItems(matching: candidate, to: song.id)
+        appendRecentImport(
+            title: song.title,
+            artist: song.artist,
+            sourceURL: song.sourceURL ?? candidate.requestURL.absoluteString,
+            succeeded: true,
+            detail: "Added to the library for on-demand streaming"
+        )
+        appendLog(.info, "Added \(song.title) by \(song.artist) as a stream-backed library item")
+
+        do {
+            try await storage.saveSidecar(for: song)
+        } catch {
+            appendLog(.error, "Sidecar write failed for \(song.title): \(error.localizedDescription)")
+        }
+
+        await persistDatabase()
+        return (song, true)
+    }
+
     func hasPlayableLocalAsset(for song: Song) async -> Bool {
-        let fileURL = await storage.absoluteURL(forStoredPath: song.localFileName)
+        guard let localFileName = song.localFileName.trimmedOrNil else { return false }
+
+        let fileURL = await storage.absoluteURL(forStoredPath: localFileName)
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return false }
 
         let asset = AVURLAsset(url: fileURL)
@@ -247,14 +329,32 @@ final class MusicLibrary: ObservableObject {
     }
 
     func replaceLocalAsset(for songID: UUID, with localFileName: String, duration: Double? = nil) async {
-        guard let index = database.songs.firstIndex(where: { $0.id == songID }) else { return }
+        _ = await attachLocalAsset(
+            to: songID,
+            localFileName: localFileName,
+            artworkPath: nil,
+            duration: duration
+        )
+    }
+
+    func attachLocalAsset(
+        to songID: UUID,
+        localFileName: String,
+        artworkPath: String?,
+        duration: Double? = nil
+    ) async -> Song? {
+        guard let index = database.songs.firstIndex(where: { $0.id == songID }) else { return nil }
 
         let oldSong = database.songs[index]
-        let oldFileURL = await storage.absoluteURL(forStoredPath: oldSong.localFileName)
+        let oldFileName = oldSong.localFileName.trimmedOrNil
 
         database.songs[index].localFileName = localFileName
+        database.songs[index].storageMode = .offline
         if let duration {
             database.songs[index].duration = duration
+        }
+        if database.songs[index].artworkPath == nil, let artworkPath {
+            database.songs[index].artworkPath = artworkPath
         }
 
         do {
@@ -263,8 +363,12 @@ final class MusicLibrary: ObservableObject {
             appendLog(.error, "Sidecar update failed for \(database.songs[index].title): \(error.localizedDescription)")
         }
 
-        await storage.removeFile(at: oldFileURL)
+        if let oldFileName, oldFileName != localFileName {
+            let oldFileURL = await storage.absoluteURL(forStoredPath: oldFileName)
+            await storage.removeFile(at: oldFileURL)
+        }
         await persistDatabase()
+        return database.songs[index]
     }
 
     func toggleFavorite(songID: UUID) async {
@@ -571,6 +675,13 @@ final class MusicLibrary: ObservableObject {
             note: item.detail,
             status: item.status == .failed ? .failed : item.status == .duplicate ? .duplicate : .needsImport
         )
+    }
+
+    private func cachedArtworkPath(for candidate: ImportCandidate, songID: UUID) async -> String? {
+        guard database.preferences.artworkCachingEnabled, let artworkURL = candidate.artworkURL else {
+            return nil
+        }
+        return try? await storage.storeArtwork(from: artworkURL, songID: songID)
     }
 
     private func persistDatabase() async {

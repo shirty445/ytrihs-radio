@@ -110,7 +110,9 @@ struct ContentView: View {
                     }
                     .foregroundStyle(selectedTab == tab ? Color.primary : Color.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 8)
+                    .contentShape(Capsule(style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -118,6 +120,7 @@ struct ContentView: View {
         .frame(height: 62)
         .padding(.horizontal, 8)
         .modifier(FloatingTabBarGlass())
+        .modifier(LiquidGlassSurfaceExpansion(shape: .capsule))
     }
 
     private var searchButton: some View {
@@ -127,10 +130,12 @@ struct ContentView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 18, weight: .semibold))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
+                .foregroundStyle(Color.primary)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .modifier(SearchButtonGlass())
+        .modifier(LiquidGlassSurfaceExpansion(shape: .circle))
     }
 
     private func handleSearchButtonTapped() {
@@ -201,7 +206,6 @@ private struct FloatingTabBarGlass: ViewModifier {
                 }
                 .shadow(color: .white.opacity(0.16), radius: 1, y: 1)
                 .shadow(color: .black.opacity(0.12), radius: 14, y: 8)
-                .pressableScaleEffect(pressedScale: 1.03)
         } else {
             content
                 .background {
@@ -209,6 +213,13 @@ private struct FloatingTabBarGlass: ViewModifier {
                         .fill(.ultraThinMaterial)
                         .ignoresSafeArea(edges: .bottom)
                 }
+                .overlay {
+                    Capsule()
+                        .strokeBorder(.white.opacity(0.28))
+                        .allowsHitTesting(false)
+                }
+                .shadow(color: .white.opacity(0.12), radius: 1, y: 1)
+                .shadow(color: .black.opacity(0.10), radius: 14, y: 8)
         }
     }
 }
@@ -223,7 +234,8 @@ private struct SearchButtonGlass: ViewModifier {
                         .strokeBorder(.white.opacity(0.18))
                         .allowsHitTesting(false)
                 }
-                .pressableScaleEffect(pressedScale: 1.06)
+                .shadow(color: .white.opacity(0.16), radius: 1, y: 1)
+                .shadow(color: .black.opacity(0.10), radius: 12, y: 6)
         } else {
             content
                 .background {
@@ -231,9 +243,93 @@ private struct SearchButtonGlass: ViewModifier {
                         .fill(.ultraThinMaterial)
                         .ignoresSafeArea(edges: .bottom)
                 }
+                .overlay {
+                    Circle()
+                        .strokeBorder(.white.opacity(0.28))
+                        .allowsHitTesting(false)
+                }
+                .shadow(color: .white.opacity(0.12), radius: 1, y: 1)
+                .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
         }
     }
 }
+
+private struct LiquidGlassSurfaceExpansion: ViewModifier {
+    enum ShapeKind {
+        case capsule
+        case circle
+    }
+
+    let shape: ShapeKind
+    @State private var isPressed = false
+
+    private let animation = Animation.easeOut(duration: 0.12)
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPressed ? 1.012 : 1)
+            .overlay {
+                pressOverlay(isPressed: isPressed)
+                    .allowsHitTesting(false)
+            }
+            .animation(animation, value: isPressed)
+            .onLongPressGesture(minimumDuration: 0, maximumDistance: 40, pressing: { pressing in
+                isPressed = pressing
+            }, perform: {})
+    }
+
+    @ViewBuilder
+    private func pressOverlay(isPressed: Bool) -> some View {
+        switch shape {
+        case .capsule:
+            Capsule(style: .continuous)
+                .fill(.white.opacity(isPressed ? 0.06 : 0))
+                .overlay {
+                    Capsule(style: .continuous)
+                        .strokeBorder(.white.opacity(isPressed ? 0.10 : 0), lineWidth: 1)
+                }
+                .overlay {
+                    Capsule(style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    .white.opacity(isPressed ? 0.08 : 0),
+                                    .white.opacity(0),
+                                    .white.opacity(isPressed ? 0.03 : 0)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .scaleEffect(isPressed ? 1.015 : 1)
+
+        case .circle:
+            Circle()
+                .fill(.white.opacity(isPressed ? 0.06 : 0))
+                .overlay {
+                    Circle()
+                        .strokeBorder(.white.opacity(isPressed ? 0.10 : 0), lineWidth: 1)
+                }
+                .overlay {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    .white.opacity(isPressed ? 0.08 : 0),
+                                    .white.opacity(0),
+                                    .white.opacity(isPressed ? 0.03 : 0)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .scaleEffect(isPressed ? 1.018 : 1)
+        }
+    }
+}
+
 private enum AppTab: String, CaseIterable, Identifiable {
     case home
     case search

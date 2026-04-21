@@ -87,6 +87,11 @@ enum DownloadLocationPolicy: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum SongStorageMode: String, Codable, Hashable {
+    case offline
+    case stream
+}
+
 enum ImportJobStatus: String, Codable, CaseIterable, Identifiable {
     case queued
     case processing
@@ -208,6 +213,7 @@ struct Song: Identifiable, Codable, Hashable {
     var albumTitle: String
     var albumArtist: String?
     var artworkPath: String?
+    var artworkSourceURL: String?
     var localFileName: String
     var duration: Double
     var importDate: Date = .now
@@ -217,10 +223,38 @@ struct Song: Identifiable, Codable, Hashable {
     var isFavorite: Bool = false
     var genre: String?
     var notes: String?
+    var storageMode: SongStorageMode?
 
     var normalizedIdentityKey: String {
         [title.normalizedForMatching, artist.normalizedForMatching]
             .joined(separator: "::")
+    }
+
+    var resolvedStorageMode: SongStorageMode {
+        storageMode ?? (localFileName.trimmedOrNil == nil ? .stream : .offline)
+    }
+
+    var isStreamBacked: Bool {
+        resolvedStorageMode == .stream
+    }
+
+    var hasLocalAssetReference: Bool {
+        localFileName.trimmedOrNil != nil
+    }
+
+    var effectiveArtworkSourceURL: String? {
+        if let artworkSourceURL, !artworkSourceURL.isEmpty {
+            return artworkSourceURL
+        }
+
+        guard let sourceID, !sourceID.isEmpty,
+              let sourceURL,
+              let url = URL(string: sourceURL),
+              url.isYouTubeURL else {
+            return nil
+        }
+
+        return "https://i.ytimg.com/vi/\(sourceID)/hqdefault.jpg"
     }
 }
 
@@ -262,6 +296,7 @@ struct AlbumSummary: Identifiable, Hashable {
     var title: String
     var artist: String
     var artworkPath: String?
+    var artworkSourceURL: String?
     var songs: [Song]
 
     var id: String {
@@ -276,6 +311,7 @@ struct AlbumSummary: Identifiable, Hashable {
 struct ArtistSummary: Identifiable, Hashable {
     var name: String
     var artworkPath: String?
+    var artworkSourceURL: String?
     var songs: [Song]
 
     var id: String { name.normalizedForMatching }

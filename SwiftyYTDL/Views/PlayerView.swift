@@ -11,7 +11,7 @@ struct PlayerView: View {
                 if let song = player.currentSong {
                     ScrollView {
                         VStack(spacing: 28) {
-                            ArtworkView(artworkPath: song.artworkPath, cornerRadius: 34, size: 300)
+                            ArtworkView(artworkPath: song.artworkPath, artworkSourceURL: song.effectiveArtworkSourceURL, cornerRadius: 34, size: 300)
                                 .padding(.top, 8)
 
                             VStack(spacing: 8) {
@@ -152,7 +152,7 @@ private struct QueueEntryRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            ArtworkView(artworkPath: entry.song.artworkPath, cornerRadius: 12, size: 48)
+            ArtworkView(artworkPath: entry.song.artworkPath, artworkSourceURL: entry.song.effectiveArtworkSourceURL, cornerRadius: 12, size: 48)
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.song.title)
                     .font(.headline)

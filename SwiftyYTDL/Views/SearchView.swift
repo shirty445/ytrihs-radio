@@ -273,14 +273,27 @@ struct SearchView: View {
 
             Spacer(minLength: 12)
 
-            Button {
-                viewModel.importSearchResult(candidate, with: environment)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 36, height: 36)
+            HStack(spacing: 8) {
+                Button {
+                    Task {
+                        await viewModel.addSearchResultAsStream(candidate, with: environment)
+                    }
+                } label: {
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    viewModel.importSearchResult(candidate, with: environment)
+                } label: {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
         }
         .padding(.horizontal, 16)
     }
@@ -310,7 +323,7 @@ struct SearchView: View {
             Text("Import From Link")
                 .font(.title3.weight(.semibold))
 
-            Text("Paste a track or playlist URL, preview what the wrapper found, then download audio into the local library.")
+            Text("Paste a track or playlist URL, preview what the wrapper found, then either add it for streaming or save it offline.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -406,10 +419,19 @@ struct SearchView: View {
                 Spacer()
             }
 
-            Button("Import Track") {
-                viewModel.importSingleTrack(with: environment)
+            HStack(spacing: 12) {
+                Button("Add as Stream") {
+                    Task {
+                        await viewModel.addSingleTrackAsStream(with: environment)
+                    }
+                }
+                .buttonStyle(.bordered)
+
+                Button("Download Track") {
+                    viewModel.importSingleTrack(with: environment)
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
         }
         .padding(18)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))

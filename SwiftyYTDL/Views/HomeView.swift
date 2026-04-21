@@ -21,7 +21,7 @@ struct HomeView: View {
                                     player.play(song: song, within: library.songs)
                                 } label: {
                                     VStack(alignment: .leading, spacing: 10) {
-                                        ArtworkView(artworkPath: song.artworkPath, cornerRadius: 24, size: 152)
+                                        ArtworkView(artworkPath: song.artworkPath, artworkSourceURL: song.effectiveArtworkSourceURL, cornerRadius: 24, size: 152)
                                         Text(song.title)
                                             .font(.headline)
                                             .foregroundStyle(.primary)
@@ -93,14 +93,14 @@ struct HomeView: View {
 
     private var heroCard: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(player.currentSong == nil ? "Offline Mix" : "Now Playing")
+            Text(player.currentSong == nil ? "Library Mix" : "Now Playing")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.78))
                 .textCase(.uppercase)
 
             if let song = player.currentSong {
                 HStack(spacing: 16) {
-                    ArtworkView(artworkPath: song.artworkPath, cornerRadius: 24, size: 112)
+                    ArtworkView(artworkPath: song.artworkPath, artworkSourceURL: song.effectiveArtworkSourceURL, cornerRadius: 24, size: 112)
 
                     VStack(alignment: .leading, spacing: 10) {
                         Text(song.title)
@@ -118,11 +118,11 @@ struct HomeView: View {
                     }
                 }
             } else {
-                Text("A sideload-friendly music player built around your own imports, playlists, and offline listening.")
+                Text("A sideload-friendly music player built around your own library, playlists, and flexible playback.")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
 
-                Text("Paste a track link, analyze a playlist export, and save audio for playback with queueing, lock screen controls, and resume progress.")
+                Text("Paste a track link, analyze a playlist export, and choose whether a song should stream on demand or be saved offline with queueing, lock screen controls, and resume progress.")
                     .font(.callout)
                     .foregroundStyle(.white.opacity(0.82))
             }

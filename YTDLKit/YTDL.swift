@@ -86,6 +86,20 @@ public enum YTDLImportProbe: Hashable {
     case playlist(YTDLPlaylistProbe)
 }
 
+public struct YTDLResolvedAudioStream: Hashable {
+    public let url: URL
+    public let webpageURL: URL?
+    public let httpHeaders: [String: String]
+    public let duration: TimeInterval
+
+    public init(url: URL, webpageURL: URL?, httpHeaders: [String: String], duration: TimeInterval) {
+        self.url = url
+        self.webpageURL = webpageURL
+        self.httpHeaders = httpHeaders
+        self.duration = duration
+    }
+}
+
 public class YTDL {
     
     public static let shared = YTDL()
@@ -402,6 +416,45 @@ public class YTDL {
         return .single(try audioTrack(from: info, browserURL: url, playlistIndex: nil))
     }
 
+    public func resolveAudioStream(
+        from url: URL,
+        playlistIndex: Int? = nil,
+        preference: YTDLAudioDownloadPreference
+    ) throws -> YTDLResolvedAudioStream {
+        var options: [String: PythonObject] = [
+            "format": PythonObject(preference.formatSelector),
+            "nocheckcertificate": true,
+            "skip_download": true,
+            "noplaylist": PythonObject(playlistIndex == nil)
+        ]
+
+        if let playlistIndex {
+            options["playlist_items"] = PythonObject("\(playlistIndex)")
+        }
+
+        let ydl = yt_dlp.YoutubeDL(PythonObject(options))
+        let rawInfo = try ydl.extract_info.throwing.dynamicallyCall(
+            withKeywordArguments: [
+                "": url.absoluteString,
+                "download": false
+            ]
+        )
+
+        let info = resolvedTrackInfo(from: rawInfo)
+
+        guard let streamURL = streamURL(from: info) else {
+            throw "Failed to resolve a direct audio stream URL"
+        }
+
+        return YTDLResolvedAudioStream(
+            url: streamURL,
+            webpageURL: info.checking["webpage_url"].flatMap({ String($0) }).flatMap(URL.init(string:))
+                ?? info.checking["original_url"].flatMap({ String($0) }).flatMap(URL.init(string:)),
+            httpHeaders: httpHeaders(from: info),
+            duration: info.checking["duration"].flatMap({ Double($0) }) ?? 0
+        )
+    }
+
     public func searchAudio(_ query: String, maxResults: Int = 10) throws -> [YTDLTrackProbe] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else {
@@ -530,6 +583,87 @@ public class YTDL {
             displayURL: directURL,
             playlistIndex: directURL == nil ? playlistIndex : nil
         )
+    }
+
+    private func resolvedTrackInfo(from info: PythonObject) -> PythonObject {
+        if let type = info.checking["_type"].flatMap({ String($0) }), type == "playlist",
+           let entries = info.checking["entries"] {
+            for entry in entries {
+                return entry
+            }
+        }
+
+        return info
+    }
+
+    private func streamURL(from info: PythonObject) -> URL? {
+        if let requestedDownloads = info.checking["requested_downloads"] {
+            for download in requestedDownloads {
+                if let url = download.checking["url"].flatMap({ String($0) }).flatMap(URL.init(string:)) {
+                    return url
+                }
+            }
+        }
+
+        if let requestedFormats = info.checking["requested_formats"] {
+            for format in requestedFormats {
+                let acodec = format.checking["acodec"].flatMap({ String($0) }) ?? ""
+                if acodec != "none",
+                   let url = format.checking["url"].flatMap({ String($0) }).flatMap(URL.init(string:)) {
+                    return url
+                }
+            }
+        }
+
+        if let url = info.checking["url"].flatMap({ String($0) }).flatMap(URL.init(string:)) {
+            return url
+        }
+
+        if let formats = info.checking["formats"] {
+            for format in formats {
+                let vcodec = format.checking["vcodec"].flatMap({ String($0) }) ?? ""
+                let acodec = format.checking["acodec"].flatMap({ String($0) }) ?? ""
+                if vcodec == "none", acodec != "none",
+                   let url = format.checking["url"].flatMap({ String($0) }).flatMap(URL.init(string:)) {
+                    return url
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private func httpHeaders(from info: PythonObject) -> [String: String] {
+        if let requestedDownloads = info.checking["requested_downloads"] {
+            for download in requestedDownloads {
+                let headers = dictionary(from: download.checking["http_headers"])
+                if !headers.isEmpty {
+                    return headers
+                }
+            }
+        }
+
+        if let requestedFormats = info.checking["requested_formats"] {
+            for format in requestedFormats {
+                let headers = dictionary(from: format.checking["http_headers"])
+                if !headers.isEmpty {
+                    return headers
+                }
+            }
+        }
+
+        return dictionary(from: info.checking["http_headers"])
+    }
+
+    private func dictionary(from object: PythonObject?) -> [String: String] {
+        guard let object else { return [:] }
+
+        var result: [String: String] = [:]
+        for item in object.items() {
+            guard let key = String(item[0]), let value = String(item[1]) else { continue }
+            result[key] = value
+        }
+        return result
     }
 
     private func formats(from info: PythonObject, ydl: PythonObject, browserUrl: URL) throws -> [Format] {

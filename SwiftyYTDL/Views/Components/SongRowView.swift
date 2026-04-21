@@ -7,7 +7,7 @@ struct SongRowView: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            ArtworkView(artworkPath: song.artworkPath, cornerRadius: 12, size: 56)
+            ArtworkView(artworkPath: song.artworkPath, artworkSourceURL: song.effectiveArtworkSourceURL, cornerRadius: 12, size: 56)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(song.title)
@@ -23,9 +23,16 @@ struct SongRowView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                if song.isFavorite {
-                    Image(systemName: "heart.fill")
-                        .foregroundStyle(theme.accentColor)
+                HStack(spacing: 6) {
+                    if song.isStreamBacked {
+                        Image(systemName: "dot.radiowaves.left.and.right")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if song.isFavorite {
+                        Image(systemName: "heart.fill")
+                            .foregroundStyle(theme.accentColor)
+                    }
                 }
 
                 Text(song.duration.asDurationText)

@@ -5,42 +5,6 @@ import SwiftUI
 import UIKit
 #endif
 
-struct PressableScaleEffect: ViewModifier {
-    let pressedScale: CGFloat
-    let animation: Animation
-
-    @GestureState private var isPressed = false
-
-    init(
-        pressedScale: CGFloat = 1.03,
-        animation: Animation = .spring(response: 0.28, dampingFraction: 0.88)
-    ) {
-        self.pressedScale = pressedScale
-        self.animation = animation
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPressed ? pressedScale : 1)
-            .animation(animation, value: isPressed)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .updating($isPressed) { _, state, _ in
-                        state = true
-                    }
-            )
-    }
-}
-
-extension View {
-    func pressableScaleEffect(
-        pressedScale: CGFloat = 1.03,
-        animation: Animation = .spring(response: 0.28, dampingFraction: 0.88)
-    ) -> some View {
-        modifier(PressableScaleEffect(pressedScale: pressedScale, animation: animation))
-    }
-}
-
 enum MusicFormatting {
     static let bytes: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
@@ -151,6 +115,45 @@ extension Array where Element == Song {
 }
 
 #if canImport(UIKit)
+enum ArtworkImageRepository {
+    private static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 300
+        return cache
+    }()
+
+    static func image(for url: URL) async -> UIImage? {
+        let key = url.absoluteString as NSString
+        if let cachedImage = cache.object(forKey: key) {
+            return cachedImage
+        }
+
+        let image: UIImage?
+        if url.isFileURL {
+            image = UIImage(contentsOfFile: url.path)
+        } else {
+            do {
+                var request = URLRequest(url: url)
+                request.cachePolicy = .returnCacheDataElseLoad
+                request.timeoutInterval = 20
+
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200..<300).contains(httpResponse.statusCode) else {
+                    return nil
+                }
+                image = UIImage(data: data)
+            } catch {
+                return nil
+            }
+        }
+
+        guard let image else { return nil }
+        cache.setObject(image, forKey: key)
+        return image
+    }
+}
+
 extension View {
     @ViewBuilder
     func applyHiddenNavBarBackgroundIfAvailable() -> some View {

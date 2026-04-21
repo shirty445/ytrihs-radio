@@ -86,18 +86,19 @@ final class ImportCoordinator: ObservableObject {
             jobs[index].detail = "Downloading audio..."
 
             do {
-                if let existing = library.findExistingSong(for: job.candidate) {
+                let existingSong = library.findExistingSong(for: job.candidate)
+
+                if let existing = existingSong {
                     if await library.hasPlayableLocalAsset(for: existing) {
                         updateCompletion(for: job.id, status: .duplicate, detail: "Already in your library", resolvedSongID: existing.id)
                         continue
                     }
 
-                    await library.removeSong(songID: existing.id)
-                    jobs[index].detail = "Refreshing local copy..."
+                    jobs[index].detail = existing.isStreamBacked ? "Saving local copy..." : "Refreshing local copy..."
                 }
 
                 let outputTemplate = try await library.storage.outputTemplate(
-                    for: job.plannedSongID,
+                    for: existingSong?.id ?? job.plannedSongID,
                     title: job.title,
                     policy: library.database.preferences.downloadLocationPolicy
                 )
@@ -122,26 +123,47 @@ final class ImportCoordinator: ObservableObject {
 
                 let storedPath = await library.storage.relativeStoredPath(for: fileURL)
                 let artworkPath: String?
-
-                if library.database.preferences.artworkCachingEnabled, let artworkURL = job.candidate.artworkURL {
-                    artworkPath = try? await library.storage.storeArtwork(from: artworkURL, songID: job.plannedSongID)
+                if library.database.preferences.artworkCachingEnabled,
+                   let artworkURL = job.candidate.artworkURL {
+                    artworkPath = try? await library.storage.storeArtwork(
+                        from: artworkURL,
+                        songID: existingSong?.id ?? job.plannedSongID
+                    )
                 } else {
-                    artworkPath = nil
+                    artworkPath = existingSong?.artworkPath
                 }
 
-                let importedSong = await library.registerImportedSong(
-                    candidate: job.candidate,
-                    plannedSongID: job.plannedSongID,
-                    localFileName: storedPath,
-                    artworkPath: artworkPath
-                )
+                if let existingSong {
+                    guard let updatedSong = await library.attachLocalAsset(
+                        to: existingSong.id,
+                        localFileName: storedPath,
+                        artworkPath: artworkPath,
+                        duration: job.candidate.duration
+                    ) else {
+                        throw NSError(
+                            domain: "ImportCoordinator",
+                            code: 1,
+                            userInfo: [NSLocalizedDescriptionKey: "The library entry could not be updated."]
+                        )
+                    }
 
-                if importedSong.id != job.plannedSongID {
-                    await library.storage.removeFile(at: fileURL)
-                    updateCompletion(for: job.id, status: .duplicate, detail: "Matched an existing track while importing", resolvedSongID: importedSong.id)
+                    updateCompletion(for: job.id, status: .completed, detail: "Saved for offline playback", resolvedSongID: updatedSong.id)
+                    banners.show(title: "Saved Offline", message: "\(updatedSong.title) is ready offline")
                 } else {
-                    updateCompletion(for: job.id, status: .completed, detail: "Saved for offline playback", resolvedSongID: importedSong.id)
-                    banners.show(title: "Imported", message: "\(importedSong.title) is ready offline")
+                    let importedSong = await library.registerImportedSong(
+                        candidate: job.candidate,
+                        plannedSongID: job.plannedSongID,
+                        localFileName: storedPath,
+                        artworkPath: artworkPath
+                    )
+
+                    if importedSong.id != job.plannedSongID {
+                        await library.storage.removeFile(at: fileURL)
+                        updateCompletion(for: job.id, status: .duplicate, detail: "Matched an existing track while importing", resolvedSongID: importedSong.id)
+                    } else {
+                        updateCompletion(for: job.id, status: .completed, detail: "Saved for offline playback", resolvedSongID: importedSong.id)
+                        banners.show(title: "Imported", message: "\(importedSong.title) is ready offline")
+                    }
                 }
             } catch {
                 let isCancelled = cancelRequested.remove(job.id) != nil

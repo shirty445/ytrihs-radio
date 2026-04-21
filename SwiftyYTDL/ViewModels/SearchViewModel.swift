@@ -111,9 +111,26 @@ final class SearchViewModel: ObservableObject {
         queue(candidate, with: environment)
     }
 
+    func addSingleTrackAsStream(with environment: AppEnvironment) async {
+        guard let candidate = singleTrackPreview else { return }
+        await addAsStream(candidate, with: environment)
+    }
+
+    func addSearchResultAsStream(_ candidate: ImportCandidate, with environment: AppEnvironment) async {
+        await addAsStream(candidate, with: environment)
+    }
+
     private func queue(_ candidate: ImportCandidate, with environment: AppEnvironment) {
         environment.importer.enqueue([candidate], quality: selectedQuality)
         environment.banners.show(title: "Queued", message: "\(candidate.title) was added to the import queue")
+    }
+
+    private func addAsStream(_ candidate: ImportCandidate, with environment: AppEnvironment) async {
+        let result = await environment.library.registerStreamedSong(candidate: candidate)
+        let message = result.wasInserted
+            ? "\(result.song.title) will stream when you play it."
+            : "\(result.song.title) is already in your library."
+        environment.banners.show(title: result.wasInserted ? "Added as Stream" : "Already Added", message: message)
     }
 
     func commitPlaylistDraft(with environment: AppEnvironment) async {
